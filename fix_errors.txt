@@ -1,0 +1,60 @@
+Analyzing contacts_management...                                
+
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\theme\app_theme.dart:38:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\utils\common_widgets.dart:27:29 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\utils\common_widgets.dart:29:48 - deprecated_member_use
+warning - Unused import: '../../core/constants/app_strings.dart' - lib\screens\auth\forgot_password_screen.dart:3:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\auth\forgot_password_screen.dart:67:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\auth\forgot_password_screen.dart:69:64 - deprecated_member_use
+warning - Unused import: '../../providers/auth_provider.dart' - lib\screens\auth\login_screen.dart:5:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\auth\login_screen.dart:93:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\auth\login_screen.dart:95:62 - deprecated_member_use
+   info - The imported package 'provider' isn't a dependency of the importing package - lib\screens\auth\signup_screen.dart:2:8 - depend_on_referenced_packages
+  error - Target of URI doesn't exist: 'package:provider/provider.dart' - lib\screens\auth\signup_screen.dart:2:8 - uri_does_not_exist
+  error - Undefined name 'Provider' - lib\screens\auth\signup_screen.dart:34:20 - undefined_identifier
+  error - The name 'AuthProvider' isn't a type, so it can't be used as a type argument - lib\screens\auth\signup_screen.dart:34:32 - non_type_as_type_argument
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\auth\signup_screen.dart:87:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\auth\signup_screen.dart:89:62 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\auth\signup_screen.dart:185:61 - deprecated_member_use
+warning - The declaration '<unnamed>' isn't referenced - lib\screens\auth\splash_screen.dart:1:1 - unused_element
+  error - Expected a method, getter, setter or operator declaration - lib\screens\auth\splash_screen.dart:1:1 - expected_executable
+  error - Expected a method, getter, setter or operator declaration - lib\screens\auth\splash_screen.dart:1:2 - expected_executable
+  error - Expected a method, getter, setter or operator declaration - lib\screens\auth\splash_screen.dart:1:3 - expected_executable
+  error - Expected to find ';' - lib\screens\auth\splash_screen.dart:1:4 - expected_token
+  error - Undefined class 'dart' - lib\screens\auth\splash_screen.dart:1:4 - undefined_class
+  error - Directives must appear before any declarations - lib\screens\auth\splash_screen.dart:2:1 - directive_after_declaration
+  error - Expected an identifier - lib\screens\auth\splash_screen.dart:2:1 - missing_identifier
+  error - Directives must appear before any declarations - lib\screens\auth\splash_screen.dart:3:1 - directive_after_declaration
+  error - Directives must appear before any declarations - lib\screens\auth\splash_screen.dart:4:1 - directive_after_declaration
+  error - Directives must appear before any declarations - lib\screens\auth\splash_screen.dart:5:1 - directive_after_declaration
+  error - Directives must appear before any declarations - lib\screens\auth\splash_screen.dart:6:1 - directive_after_declaration
+  error - Directives must appear before any declarations - lib\screens\auth\splash_screen.dart:7:1 - directive_after_declaration
+  error - Target of URI doesn't exist: '../login/login_screen.dart' - lib\screens\auth\splash_screen.dart:7:8 - uri_does_not_exist
+  error - Directives must appear before any declarations - lib\screens\auth\splash_screen.dart:8:1 - directive_after_declaration
+  error - Directives must appear before any declarations - lib\screens\auth\splash_screen.dart:9:1 - directive_after_declaration
+   info - Don't use 'BuildContext's across async gaps - lib\screens\auth\splash_screen.dart:34:33 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\auth\splash_screen.dart:36:33 - use_build_context_synchronously
+  error - The name 'LoginScreen' isn't a class - lib\screens\auth\splash_screen.dart:36:82 - creation_with_non_type
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\auth\splash_screen.dart:61:47 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\auth\splash_screen.dart:104:53 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\contacts\add_contact_screen.dart:203:33 - deprecated_member_use
+  error - Target of URI doesn't exist: '../../core/router/app_navigation.dart' - lib\screens\contacts\contact_detail_screen.dart:4:8 - uri_does_not_exist
+  error - Undefined name 'AppRoutes' - lib\screens\contacts\contact_detail_screen.dart:87:57 - undefined_identifier
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\screens\contacts\contact_detail_screen.dart:135:11 - use_null_aware_elements
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\contacts\contact_detail_screen.dart:136:85 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\contacts\contact_detail_screen.dart:146:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\contacts\contact_detail_screen.dart:155:29 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\contacts\contact_detail_screen.dart:157:48 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\contacts\contact_detail_screen.dart:163:53 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\contacts\contacts_list_screen.dart:129:75 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\contacts\edit_contact_screen.dart:253:33 - deprecated_member_use
+warning - Unused import: '../../core/utils/bottom_nav_bar.dart' - lib\screens\dates\dates_home_screen.dart:6:8 - unused_import
+warning - The value of the local variable 'isAdmin' isn't used - lib\screens\dates\dates_home_screen.dart:31:11 - unused_local_variable
+warning - Unused import: '../../providers/contacts_provider.dart' - lib\screens\home\home_screen.dart:8:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\home\home_screen.dart:146:80 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\home\home_screen.dart:181:54 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\home\home_screen.dart:181:85 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\home\home_screen.dart:206:41 - deprecated_member_use
+warning - Unused import: '../models/user_model.dart' - lib\services\auth_service.dart:4:8 - unused_import
+warning - Unused import: 'package:contacts_management/main.dart' - test\widget_test.dart:12:8 - unused_import
+
