@@ -35,6 +35,37 @@ class ContactsNotifier extends StateNotifier<ContactsState> {
       state = state.copyWith(error: e.toString(), isLoading: false);
     }
   }
+
+  Future<void> addContact(Map<String, dynamic> contactData, {String? imagePath}) async {
+    try {
+      final newContact = await _contactService.addContact(contactData, imagePath: imagePath);
+      state = state.copyWith(contacts: [newContact, ...state.contacts]);
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
+  }
+
+  Future<void> updateContact(String id, Map<String, dynamic> contactData, {String? imagePath}) async {
+    try {
+      final updatedContact = await _contactService.updateContact(id, contactData, imagePath: imagePath);
+      state = state.copyWith(
+        contacts: state.contacts.map((c) => c.id == id ? updatedContact : c).toList(),
+      );
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
+  }
+
+  Future<void> deleteContact(String id) async {
+    try {
+      await _contactService.deleteContact(id);
+      state = state.copyWith(
+        contacts: state.contacts.where((c) => c.id != id).toList(),
+      );
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
+  }
 }
 
 final contactsProvider = StateNotifierProvider<ContactsNotifier, ContactsState>((ref) {

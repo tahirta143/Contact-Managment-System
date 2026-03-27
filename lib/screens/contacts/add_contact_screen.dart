@@ -1,183 +1,304 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/common_widgets.dart';
+import '../../providers/contacts_provider.dart';
+import '../../models/contact_event_model.dart';
 
-class AddContactScreen extends StatefulWidget {
+const Color kBirthdayColor    = Color(0xFFFF6B9D);
+const Color kAnniversaryColor = Color(0xFFFF9500);
+
+class AddContactScreen extends ConsumerStatefulWidget {
   const AddContactScreen({super.key});
 
   @override
-  State<AddContactScreen> createState() => _AddContactScreenState();
+  ConsumerState<AddContactScreen> createState() => _AddContactScreenState();
 }
 
-class _AddContactScreenState extends State<AddContactScreen> {
+class _AddContactScreenState extends ConsumerState<AddContactScreen> {
   final _formKey = GlobalKey<FormState>();
-  
-  // Controllers
-  final _nameController = TextEditingController();
-  final _designationController = TextEditingController();
-  final _referenceController = TextEditingController();
-  final _professionController = TextEditingController();
-  final _specialityController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _mobileController = TextEditingController();
-  final _whatsappController = TextEditingController();
-  final _addressController = TextEditingController();
+
+  final _nameController             = TextEditingController();
+  final _designationController      = TextEditingController();
+  final _referenceController        = TextEditingController();
+  final _professionController       = TextEditingController();
+  final _specialityController       = TextEditingController();
+  final _phoneController            = TextEditingController();
+  final _mobileController           = TextEditingController();
+  final _whatsappController         = TextEditingController();
+  final _addressController          = TextEditingController();
   final _permanentAddressController = TextEditingController();
-  final _cityController = TextEditingController();
+  final _cityController             = TextEditingController();
 
   DateTime? _birthday;
   DateTime? _anniversary;
   int _reminderDays = 1;
+  
+  String? _imagePath;
+  final List<ContactEvent> _customEvents = [];
+  final List<String> _selectedGroups = [];
+  final TextEditingController _groupController = TextEditingController();
 
-  void _handleSave() {
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _designationController.dispose();
+    _referenceController.dispose();
+    _professionController.dispose();
+    _specialityController.dispose();
+    _phoneController.dispose();
+    _mobileController.dispose();
+    _whatsappController.dispose();
+    _addressController.dispose();
+    _permanentAddressController.dispose();
+    _cityController.dispose();
+    _groupController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imagePath = pickedFile.path;
+      });
+    }
+  }
+
+  void _addCustomEvent() {
+    setState(() {
+      _customEvents.add(ContactEvent(
+        type: 'Other',
+        date: DateTime.now(),
+        label: '',
+      ));
+    });
+  }
+
+  void _removeCustomEvent(int index) {
+    setState(() {
+      _customEvents.removeAt(index);
+    });
+  }
+
+  void _handleSave() async {
     if (_formKey.currentState!.validate()) {
-      // Logic to save contact
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Contact saved successfully!"), backgroundColor: kButtonColor),
-      );
+      if (_selectedGroups.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Please add at least one group."),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+      final contactData = {
+        "name": _nameController.text.trim(),
+        "designation": _designationController.text.trim(),
+        "reference": _referenceController.text.trim(),
+        "profession": _professionController.text.trim(),
+        "speciality": _specialityController.text.trim(),
+        "phone": _phoneController.text.trim(),
+        "mobile": _mobileController.text.trim(),
+        "whatsapp": _whatsappController.text.trim(),
+        "address": _addressController.text.trim(),
+        "permanentAddress": _permanentAddressController.text.trim(),
+        "city": _cityController.text.trim(),
+        "birthday": _birthday?.toIso8601String().split('T')[0],
+        "anniversary": _anniversary?.toIso8601String().split('T')[0],
+        "events": _customEvents.map((e) => e.toJson()).toList(),
+        "groups": _selectedGroups.join(','),
+      };
+
+      await ref.read(contactsProvider.notifier).addContact(contactData, imagePath: _imagePath);
+      
+      final error = ref.read(contactsProvider).error;
+      if (error == null) {
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Contact saved successfully!"),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error), backgroundColor: Colors.red),
+          );
+        }
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final horizontalPadding = size.width * 0.05;
+    final size         = MediaQuery.of(context).size;
+    final sw           = size.width;
+    final sh           = size.height;
+    final hPad         = sw * 0.05;
+    final avatarRadius = sw * 0.15;
 
     return Scaffold(
       backgroundColor: kScaffoldBg,
-      body: SafeArea(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, size: sw * 0.06),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          "Add Contact",
+          style: TextStyle(fontSize: sw * 0.048, fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          TextButton(
+            onPressed: _handleSave,
+            child: Text(
+              "Save",
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: sw * 0.038),
+            ),
+          ),
+          SizedBox(width: sw * 0.02),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(horizontal: hPad, vertical: sh * 0.02),
+        child: Form(
+          key: _formKey,
           child: Column(
             children: [
-              _buildAppBar(horizontalPadding),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        _buildPhotoSection(size.width),
-                        const SizedBox(height: 30),
-                        _buildSectionHeader("Personal Info"),
-                        _buildTextField(_nameController, "Full Name*", Icons.person_outline, required: true),
-                        _buildTextField(_designationController, "Designation", Icons.work_outline),
-                        _buildTextField(_referenceController, "Reference", Icons.people_outline),
-                        _buildTextField(_professionController, "Profession", Icons.business_center_outlined),
-                        _buildTextField(_specialityController, "Speciality", Icons.star_outline),
-                        
-                        const SizedBox(height: 24),
-                        _buildSectionHeader("Contact Details"),
-                        _buildTextField(_phoneController, "Phone", Icons.phone_outlined, keyboard: TextInputType.phone),
-                        _buildTextField(_mobileController, "Mobile", Icons.smartphone, keyboard: TextInputType.phone),
-                        _buildTextField(_whatsappController, "WhatsApp", Icons.chat_outlined, keyboard: TextInputType.phone),
-                        
-                        const SizedBox(height: 24),
-                        _buildSectionHeader("Address"),
-                        _buildTextField(_addressController, "Current Address", Icons.location_on_outlined, maxLines: 2),
-                        _buildTextField(_permanentAddressController, "Permanent Address", Icons.home_outlined, maxLines: 2),
-                        _buildTextField(_cityController, "City", Icons.location_city),
-                        
-                        const SizedBox(height: 24),
-                        _buildSectionHeader("Important Dates"),
-                        _buildDatePicker("Birthday", _birthday, (date) => setState(() => _birthday = date), Icons.cake_outlined, kButtonColor),
-                        _buildDatePicker("Anniversary", _anniversary, (date) => setState(() => _anniversary = date), Icons.favorite_outline, Colors.purple),
-                        
-                        const SizedBox(height: 24),
-                        _buildReminderSection(),
-                        
-                        const SizedBox(height: 40),
-                        ElevatedButton(
-                          onPressed: _handleSave,
-                          child: const Text("SAVE CONTACT"),
-                        ),
-                        const SizedBox(height: 40),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+              _buildPhotoSection(avatarRadius, sw),
+              SizedBox(height: sh * 0.035),
+
+              _buildSectionHeader(context, "Personal Info"),
+              _buildTextField(context, _nameController, "Full Name*", Icons.person_outline, required: true),
+              _buildTextField(context, _designationController, "Designation", Icons.work_outline),
+              _buildTextField(context, _referenceController, "Reference", Icons.people_outline),
+              _buildTextField(context, _professionController, "Profession", Icons.business_center_outlined),
+              _buildTextField(context, _specialityController, "Speciality", Icons.star_outline),
+
+              SizedBox(height: sh * 0.028),
+              _buildSectionHeader(context, "Contact Details"),
+              _buildTextField(context, _phoneController, "Phone", Icons.phone_outlined, keyboard: TextInputType.phone),
+              _buildTextField(context, _mobileController, "Mobile", Icons.smartphone, keyboard: TextInputType.phone),
+              _buildTextField(context, _whatsappController, "WhatsApp", Icons.chat_outlined, keyboard: TextInputType.phone),
+
+              SizedBox(height: sh * 0.028),
+              _buildSectionHeader(context, "Address"),
+              _buildTextField(context, _addressController, "Current Address", Icons.location_on_outlined, maxLines: 2),
+              _buildTextField(context, _permanentAddressController, "Permanent Address", Icons.home_outlined, maxLines: 2),
+              _buildTextField(context, _cityController, "City", Icons.location_city),
+
+              SizedBox(height: sh * 0.028),
+              _buildSectionHeader(context, "Important Dates"),
+              _buildDatePicker(context, "Birthday", _birthday, (d) => setState(() => _birthday = d), Icons.cake_outlined, kBirthdayColor),
+              _buildDatePicker(context, "Anniversary", _anniversary, (d) => setState(() => _anniversary = d), Icons.favorite_outline, kAnniversaryColor),
+
+              SizedBox(height: sh * 0.028),
+              _buildGroupsSection(context, sw, sh),
+
+              SizedBox(height: sh * 0.028),
+              _buildDynamicEventsSection(context, sw, sh),
+
+              SizedBox(height: sh * 0.028),
+              _buildReminderSection(context, sw),
+
+              SizedBox(height: sh * 0.048),
+              _buildSaveButton(context, sw, sh),
+              SizedBox(height: sh * 0.048),
             ],
           ),
         ),
-      );
-  }
-
-  Widget _buildAppBar(double horizontalPadding) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: horizontalPadding * 0.5, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: kTextPrimary),
-            onPressed: () => Navigator.pop(context),
-          ),
-          const Text("Add Contact", style: TextStyle(color: kTextPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
-          TextButton(
-            onPressed: _handleSave,
-            child: const Text("Save", style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.bold)),
-          ),
-        ],
       ),
     );
   }
 
-  Widget _buildPhotoSection(double size) {
+  Widget _buildPhotoSection(double avatarRadius, double sw) {
     return Center(
-      child: Stack(
-        children: [
-          GradientAvatar(radius: size * 0.15, initials: "TA"),
-          Positioned(
-            bottom: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: const BoxDecoration(color: kPrimaryColor, shape: BoxShape.circle),
-              child: const Icon(Icons.camera_alt_outlined, color: Colors.white, size: 20),
+      child: GestureDetector(
+        onTap: _pickImage,
+        child: Stack(
+          children: [
+            _imagePath != null
+                ? CircleAvatar(
+                    radius: avatarRadius,
+                    backgroundImage: FileImage(File(_imagePath!)),
+                  )
+                : GradientAvatar(radius: avatarRadius, initials: ""),
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: Container(
+                padding: EdgeInsets.all(sw * 0.022),
+                decoration: const BoxDecoration(color: kPrimaryColor, shape: BoxShape.circle),
+                child: Icon(Icons.camera_alt_outlined, color: Colors.white, size: sw * 0.048),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title, {Widget? trailing}) {
+    final sw = MediaQuery.of(context).size.width;
+    final sh = MediaQuery.of(context).size.height;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(bottom: sh * 0.018),
       child: Row(
         children: [
-          Container(width: 3, height: 16, color: kPrimaryColor),
-          const SizedBox(width: 10),
-          Text(title, style: const TextStyle(color: kTextPrimary, fontSize: 15, fontWeight: FontWeight.bold)),
-          const SizedBox(width: 10),
-          Expanded(child: Divider(color: kTextTertiary.withValues(alpha: 0.1))),
+          Container(width: sw * 0.008, height: sh * 0.022, color: kPrimaryColor),
+          SizedBox(width: sw * 0.025),
+          Text(
+            title,
+            style: TextStyle(color: kTextPrimary, fontSize: sw * 0.038, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(width: sw * 0.025),
+          Expanded(child: Divider(color: kTextTertiary.withOpacity(0.1))),
+          if (trailing != null) ...[
+            SizedBox(width: sw * 0.02),
+            trailing,
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, IconData icon, {bool required = false, TextInputType? keyboard, int maxLines = 1}) {
+  Widget _buildTextField(BuildContext context, TextEditingController controller, String hint, IconData icon, {bool required = false, TextInputType? keyboard, int maxLines = 1}) {
+    final sw = MediaQuery.of(context).size.width;
+    final sh = MediaQuery.of(context).size.height;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: sh * 0.014),
       child: TextFormField(
         controller: controller,
         maxLines: maxLines,
         keyboardType: keyboard,
-        style: const TextStyle(color: kTextPrimary, fontWeight: FontWeight.w600),
+        style: TextStyle(color: kTextPrimary, fontWeight: FontWeight.w600, fontSize: sw * 0.036),
         decoration: InputDecoration(
           hintText: hint,
-          prefixIcon: Icon(icon),
+          hintStyle: TextStyle(fontSize: sw * 0.034),
+          prefixIcon: Icon(icon, size: sw * 0.052),
+          contentPadding: EdgeInsets.symmetric(vertical: sh * 0.018, horizontal: sw * 0.04),
         ),
-        validator: required ? (value) => value == null || value.isEmpty ? "$hint is required" : null : null,
+        validator: required ? (v) => (v == null || v.isEmpty) ? "$hint is required" : null : null,
       ),
     );
   }
 
-  Widget _buildDatePicker(String label, DateTime? value, Function(DateTime) onSelect, IconData icon, Color accent) {
+  Widget _buildDatePicker(BuildContext context, String label, DateTime? value, Function(DateTime) onSelect, IconData icon, Color accent) {
+    final sw = MediaQuery.of(context).size.width;
+    final sh = MediaQuery.of(context).size.height;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: sh * 0.014),
       child: GestureDetector(
         onTap: () async {
           final date = await showDatePicker(
@@ -185,33 +306,22 @@ class _AddContactScreenState extends State<AddContactScreen> {
             initialDate: value ?? DateTime.now(),
             firstDate: DateTime(1900),
             lastDate: DateTime.now(),
-            builder: (context, child) {
-              return Theme(
-                data: Theme.of(context).copyWith(
-                  colorScheme: const ColorScheme.light(primary: kPrimaryColor, onPrimary: Colors.white, onSurface: kTextPrimary),
-                ),
-                child: child!,
-              );
-            },
           );
           if (date != null) onSelect(date);
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: kInputBg,
-            borderRadius: BorderRadius.circular(30),
-          ),
+          padding: EdgeInsets.symmetric(horizontal: sw * 0.04, vertical: sh * 0.018),
+          decoration: BoxDecoration(color: kInputBg, borderRadius: BorderRadius.circular(sw * 0.075)),
           child: Row(
             children: [
-              Icon(icon, color: kPrimaryColor, size: 22),
-              const SizedBox(width: 12),
+              Icon(icon, color: accent, size: sw * 0.055),
+              SizedBox(width: sw * 0.03),
               Text(
                 value != null ? DateFormat('d MMMM yyyy').format(value) : "Select $label",
-                style: TextStyle(color: value != null ? kTextPrimary : kTextSecondary, fontWeight: FontWeight.w600),
+                style: TextStyle(color: value != null ? kTextPrimary : kTextSecondary, fontWeight: FontWeight.w600, fontSize: sw * 0.036),
               ),
               const Spacer(),
-              const Icon(Icons.calendar_today_outlined, color: kTextTertiary, size: 18),
+              Icon(Icons.calendar_today_outlined, color: kTextTertiary, size: sw * 0.045),
             ],
           ),
         ),
@@ -219,26 +329,229 @@ class _AddContactScreenState extends State<AddContactScreen> {
     );
   }
 
-  Widget _buildReminderSection() {
+  Widget _buildGroupsSection(BuildContext context, double sw, double sh) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(context, "Groups *"),
+        // Tag input
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: sw * 0.04, vertical: sh * 0.012),
+          decoration: BoxDecoration(
+            color: kInputBg,
+            borderRadius: BorderRadius.circular(sw * 0.075),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.group_outlined, color: kTextSecondary, size: sw * 0.052),
+              SizedBox(width: sw * 0.03),
+              Expanded(
+                child: TextField(
+                  controller: _groupController,
+                  style: TextStyle(color: kTextPrimary, fontSize: sw * 0.036),
+                  decoration: InputDecoration(
+                    hintText: "Type group name and press Enter",
+                    hintStyle: TextStyle(fontSize: sw * 0.033, color: kTextSecondary),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    isDense: true,
+                  ),
+                  onSubmitted: (val) {
+                    final trimmed = val.trim();
+                    if (trimmed.isNotEmpty && !_selectedGroups.contains(trimmed)) {
+                      setState(() => _selectedGroups.add(trimmed));
+                    }
+                    _groupController.clear();
+                  },
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  final trimmed = _groupController.text.trim();
+                  if (trimmed.isNotEmpty && !_selectedGroups.contains(trimmed)) {
+                    setState(() => _selectedGroups.add(trimmed));
+                  }
+                  _groupController.clear();
+                },
+                child: Icon(Icons.add_circle, color: kPrimaryColor, size: sw * 0.06),
+              ),
+            ],
+          ),
+        ),
+        if (_selectedGroups.isEmpty)
+          Padding(
+            padding: EdgeInsets.only(top: sh * 0.008, left: sw * 0.02),
+            child: Text(
+              "* At least one group is required",
+              style: TextStyle(color: Colors.red.shade400, fontSize: sw * 0.029),
+            ),
+          ),
+        if (_selectedGroups.isNotEmpty) ...[
+          SizedBox(height: sh * 0.012),
+          Wrap(
+            spacing: sw * 0.02,
+            runSpacing: sh * 0.008,
+            children: _selectedGroups.map((group) {
+              return Chip(
+                label: Text(group, style: TextStyle(color: Colors.white, fontSize: sw * 0.032)),
+                backgroundColor: kPrimaryColor,
+                deleteIconColor: Colors.white70,
+                onDeleted: () => setState(() => _selectedGroups.remove(group)),
+                padding: EdgeInsets.symmetric(horizontal: sw * 0.01),
+              );
+            }).toList(),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDynamicEventsSection(BuildContext context, double sw, double sh) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(
+          context,
+          "Custom Events",
+          trailing: TextButton.icon(
+            onPressed: _addCustomEvent,
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text("Add Event"),
+          ),
+        ),
+        ...List.generate(_customEvents.length, (index) {
+          final event = _customEvents[index];
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: kInputBg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: kTextTertiary.withOpacity(0.1)),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButton<String>(
+                        value: event.type,
+                        isExpanded: true,
+                        underline: const SizedBox(),
+                        items: ['Meeting', 'Work', 'Personal', 'Other'].map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          setState(() {
+                            _customEvents[index] = ContactEvent(
+                              type: val!,
+                              date: event.date,
+                              label: event.label,
+                            );
+                          });
+                        },
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      onPressed: () => _removeCustomEvent(index),
+                    ),
+                  ],
+                ),
+                GestureDetector(
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: event.date,
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime(2100),
+                    );
+                    if (date != null) {
+                      setState(() {
+                        _customEvents[index] = ContactEvent(
+                          type: event.type,
+                          date: date,
+                          label: event.label,
+                        );
+                      });
+                    }
+                  },
+                  child: Row(
+                    children: [
+                      const Icon(Icons.event, size: 20, color: kPrimaryColor),
+                      const SizedBox(width: 8),
+                      Text(DateFormat('d MMM yyyy').format(event.date)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  decoration: const InputDecoration(
+                    hintText: "Label (e.g. First Meeting)",
+                    border: InputBorder.none,
+                    isDense: true,
+                  ),
+                  onChanged: (val) {
+                    _customEvents[index] = ContactEvent(
+                      type: event.type,
+                      date: event.date,
+                      label: val,
+                    );
+                  },
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildReminderSection(BuildContext context, double sw) {
     return Row(
       children: [
-        const Icon(Icons.notifications_active_outlined, color: kTextSecondary, size: 20),
-        const SizedBox(width: 12),
-        const Text("Remind me", style: TextStyle(color: kTextPrimary, fontSize: 14)),
+        Icon(Icons.notifications_active_outlined, color: kTextSecondary, size: sw * 0.05),
+        SizedBox(width: sw * 0.03),
+        Text("Remind me", style: TextStyle(color: kTextPrimary, fontSize: sw * 0.036)),
         const Spacer(),
         DropdownButton<int>(
           value: _reminderDays,
           dropdownColor: Colors.white,
           underline: const SizedBox(),
-          items: [0, 1, 2, 3, 7].map((int value) {
+          icon: Icon(Icons.keyboard_arrow_down, size: sw * 0.05),
+          items: [0, 1, 2, 3, 7].map((val) {
             return DropdownMenuItem<int>(
-              value: value,
-              child: Text(value == 0 ? "Same day" : "$value day(s) before", style: const TextStyle(color: kTextSecondary)),
+              value: val,
+              child: Text(
+                val == 0 ? "Same day" : "$val day(s) before",
+                style: TextStyle(color: kTextSecondary, fontSize: sw * 0.033),
+              ),
             );
           }).toList(),
           onChanged: (val) => setState(() => _reminderDays = val ?? 1),
         ),
       ],
+    );
+  }
+
+  Widget _buildSaveButton(BuildContext context, double sw, double sh) {
+    final isLoading = ref.watch(contactsProvider).isLoading;
+    return SizedBox(
+      width: double.infinity,
+      height: sh * 0.065,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : _handleSave,
+        style: ElevatedButton.styleFrom(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(sw * 0.075)),
+        ),
+        child: isLoading
+            ? const CircularProgressIndicator(color: Colors.white)
+            : Text("SAVE CONTACT", style: TextStyle(fontSize: sw * 0.038, fontWeight: FontWeight.bold)),
+      ),
     );
   }
 }

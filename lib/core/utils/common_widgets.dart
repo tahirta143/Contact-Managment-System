@@ -30,7 +30,7 @@ class AppCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -65,7 +65,7 @@ class GradientAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     return CircleAvatar(
       radius: radius,
-      backgroundColor: backgroundColor ?? kPrimaryColor.withValues(alpha: 0.1),
+      backgroundColor: backgroundColor ?? kPrimaryColor.withOpacity(0.1),
       backgroundImage: imageUrl != null ? NetworkImage(imageUrl!) : null,
       child: imageUrl == null && initials != null
           ? Text(

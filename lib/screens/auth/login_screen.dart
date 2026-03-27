@@ -16,157 +16,409 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _emailController = TextEditingController();
+  final _emailController    = TextEditingController();
   final _passwordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-  bool _isPasswordVisible = false;
+  final _formKey            = GlobalKey<FormState>();
+  bool _isPasswordVisible   = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   void _handleLogin() async {
     if (_formKey.currentState!.validate()) {
-      // In a real app, this would call the API
-      // For now, let's mock a successful login
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainScreen()));
-      
-      // Real implementation would be:
-      // await ref.read(authProvider.notifier).login(_emailController.text, _passwordController.text);
-      // if (ref.read(authProvider).user != null) {
-      //   if (mounted) {
-      //     Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainScreen()));
-      //   }
-      // }
+      await ref.read(authProvider.notifier).login(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
+
+      final authState = ref.read(authProvider);
+      if (authState.user != null) {
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const MainScreen()),
+          );
+        }
+      } else if (authState.error != null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(authState.error!), backgroundColor: Colors.red),
+          );
+        }
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final padding = MediaQuery.of(context).padding;
-    final availableHeight = size.height - padding.top - padding.bottom;
+    final sw  = MediaQuery.of(context).size.width;
+    final sh  = MediaQuery.of(context).size.height;
+    final top = MediaQuery.of(context).padding.top;
 
     return Scaffold(
       backgroundColor: kScaffoldBg,
-      body: SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: size.width * 0.06),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  SizedBox(height: availableHeight * 0.05),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: kTextPrimary),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      const CircleAvatar(
-                        radius: 18,
-                        backgroundColor: kCardBg,
-                        child: Icon(Icons.person, color: kTextSecondary, size: 20),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: availableHeight * 0.05),
-                  Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      color: kPrimaryColor.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.lock_person_rounded, color: kPrimaryColor, size: 35),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    AppStrings.welcomeBack,
-                    style: Theme.of(context).textTheme.displayMedium?.copyWith(color: kTextPrimary),
-                  ),
-                  Text(
-                    AppStrings.signInSubtitle,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: kTextSecondary),
-                  ),
-                  SizedBox(height: availableHeight * 0.05),
-                  
-                  // FORM CARD
-                  AppCard(
-                    padding: EdgeInsets.all(size.width * 0.06),
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          controller: _emailController,
-                          style: const TextStyle(color: kTextPrimary, fontWeight: FontWeight.bold),
-                          decoration: const InputDecoration(
-                            hintText: "Email",
-                            prefixIcon: Icon(Icons.email_outlined),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) return "Email is required";
-                            if (!value.contains('@')) return "Enter a valid email";
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: !_isPasswordVisible,
-                          style: const TextStyle(color: kTextPrimary, fontWeight: FontWeight.bold),
-                          decoration: InputDecoration(
-                            hintText: "Password",
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                                color: kTextSecondary,
-                              ),
-                              onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) return "Password is required";
-                            if (value.length < 6) return "Min 6 characters";
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 10),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen())),
-                            child: const Text(
-                              AppStrings.forgotPassword,
-                              style: TextStyle(color: kTextSecondary, fontSize: 13),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        ElevatedButton(
-                          onPressed: _handleLogin,
-                          child: const Text(AppStrings.login),
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  SizedBox(height: availableHeight * 0.04),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(AppStrings.dontHaveAccount, style: TextStyle(color: kTextSecondary)),
-                      TextButton(
-                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SignupScreen())),
-                        child: const Text(
-                          "SIGN UP",
-                          style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              _buildHeader(sw, sh, top),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: sw * 0.055),
+                child: Column(
+                  children: [
+                    SizedBox(height: sh * 0.032),
+                    _buildFormCard(sw, sh),
+                    _buildDivider(sw, sh),
+                    _buildSocialRow(sw, sh),
+                    SizedBox(height: sh * 0.012),
+                    _buildSignUpRow(sw),
+                    SizedBox(height: sh * 0.04),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Colored header with lock icon + title ──────────────────────────────────
+  Widget _buildHeader(double sw, double sh, double top) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(
+        sw * 0.06,
+        top + sh * 0.04,
+        sw * 0.06,
+        sh * 0.042,
+      ),
+      decoration: BoxDecoration(
+        color: kPrimaryColor,
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(sw * 0.09),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Frosted icon box
+          Container(
+            width:  sw * 0.16,
+            height: sw * 0.16,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.18),
+              borderRadius: BorderRadius.circular(sw * 0.045),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1.5,
+              ),
+            ),
+            child: Icon(
+              Icons.lock_person_rounded,
+              color: Colors.white,
+              size: sw * 0.075,
+            ),
+          ),
+          SizedBox(height: sh * 0.018),
+          Text(
+            AppStrings.welcomeBack,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: sw * 0.055,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.2,
+            ),
+          ),
+          SizedBox(height: sh * 0.005),
+          Text(
+            AppStrings.signInSubtitle,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: sw * 0.032,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Main form card ─────────────────────────────────────────────────────────
+  Widget _buildFormCard(double sw, double sh) {
+    return AppCard(
+      borderRadius: sw * 0.045,
+      padding: EdgeInsets.all(sw * 0.055),
+      child: Column(
+        children: [
+          _buildInputField(
+            label:      "EMAIL ADDRESS",
+            hint:       "Enter your email",
+            controller: _emailController,
+            icon:       Icons.email_outlined,
+            sw: sw, sh: sh,
+            keyboardType: TextInputType.emailAddress,
+            validator: (v) {
+              if (v == null || v.isEmpty) return "Email is required";
+              if (!v.contains('@'))       return "Enter a valid email";
+              return null;
+            },
+          ),
+          SizedBox(height: sh * 0.018),
+          _buildInputField(
+            label:      "PASSWORD",
+            hint:       "Enter your password",
+            controller: _passwordController,
+            icon:       Icons.lock_outline,
+            sw: sw, sh: sh,
+            obscureText: !_isPasswordVisible,
+            suffixIcon: IconButton(
+              icon: Icon(
+                _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                color: kTextSecondary,
+                size: sw * 0.052,
+              ),
+              onPressed: () =>
+                  setState(() => _isPasswordVisible = !_isPasswordVisible),
+            ),
+            validator: (v) {
+              if (v == null || v.isEmpty) return "Password is required";
+              if (v.length < 6)          return "Min 6 characters";
+              return null;
+            },
+          ),
+          SizedBox(height: sh * 0.008),
+
+          // Forgot password
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+              ),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                AppStrings.forgotPassword,
+                style: TextStyle(
+                  color: kPrimaryColor,
+                  fontSize: sw * 0.032,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
+          SizedBox(height: sh * 0.024),
+
+          SizedBox(
+            width: double.infinity,
+            height: sh * 0.065,
+            child: Consumer(
+              builder: (context, ref, child) {
+                final authState = ref.watch(authProvider);
+                return ElevatedButton(
+                  onPressed: authState.isLoading ? null : _handleLogin,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kPrimaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(sw * 0.035),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: authState.isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        AppStrings.login,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: sw * 0.042,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                      SizedBox(width: sw * 0.02),
+                      Icon(Icons.arrow_forward_rounded,
+                          color: Colors.white, size: sw * 0.048),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Reusable labeled input field ───────────────────────────────────────────
+  Widget _buildInputField({
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    required IconData icon,
+    required double sw,
+    required double sh,
+    bool obscureText = false,
+    TextInputType keyboardType = TextInputType.text,
+    Widget? suffixIcon,
+    String? Function(String?)? validator,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: kTextSecondary,
+            fontSize: sw * 0.028,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
         ),
+        SizedBox(height: sh * 0.007),
+        TextFormField(
+          controller:   controller,
+          obscureText:  obscureText,
+          keyboardType: keyboardType,
+          style: TextStyle(
+            color: kTextPrimary,
+            fontSize: sw * 0.038,
+            fontWeight: FontWeight.w600,
+          ),
+          decoration: InputDecoration(
+            hintText:   hint,
+            filled:     true,
+            fillColor:  kInputBg,
+            prefixIcon: Icon(icon, color: kPrimaryColor, size: sw * 0.052),
+            suffixIcon: suffixIcon,
+            contentPadding: EdgeInsets.symmetric(
+              vertical: sh * 0.018,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(sw * 0.032),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(sw * 0.032),
+              borderSide: BorderSide(color: kPrimaryColor, width: 1.5),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(sw * 0.032),
+              borderSide: const BorderSide(color: Colors.red, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(sw * 0.032),
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+            ),
+          ),
+          validator: validator,
+        ),
+      ],
+    );
+  }
+
+  // ── "Or continue with" divider ─────────────────────────────────────────────
+  Widget _buildDivider(double sw, double sh) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: sh * 0.022),
+      child: Row(
+        children: [
+          Expanded(child: Divider(color: kTextTertiary.withOpacity(0.2), thickness: 0.5)),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: sw * 0.04),
+            child: Text(
+              "or continue with",
+              style: TextStyle(color: kTextSecondary, fontSize: sw * 0.03),
+            ),
+          ),
+          Expanded(child: Divider(color: kTextTertiary.withOpacity(0.2), thickness: 0.5)),
+        ],
+      ),
+    );
+  }
+
+  // ── Social login buttons ───────────────────────────────────────────────────
+  Widget _buildSocialRow(double sw, double sh) {
+    return Row(
+      children: [
+        Expanded(child: _buildSocialBtn("Google",  Icons.g_mobiledata,  Colors.red,   sw, sh)),
+        SizedBox(width: sw * 0.03),
+        Expanded(child: _buildSocialBtn("Apple",   Icons.apple,          Colors.black, sw, sh)),
+      ],
+    );
+  }
+
+  Widget _buildSocialBtn(
+      String label, IconData icon, Color iconColor, double sw, double sh,
+      ) {
+    return AppCard(
+      borderRadius: sw * 0.032,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(sw * 0.032),
+        onTap: () {},
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: sh * 0.018),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: iconColor, size: sw * 0.055),
+              SizedBox(width: sw * 0.02),
+              Text(
+                label,
+                style: TextStyle(
+                  color: kTextPrimary,
+                  fontSize: sw * 0.036,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Sign up row ────────────────────────────────────────────────────────────
+  Widget _buildSignUpRow(double sw) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          AppStrings.dontHaveAccount,
+          style: TextStyle(color: kTextSecondary, fontSize: sw * 0.034),
+        ),
+        TextButton(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const SignupScreen()),
+          ),
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.only(left: sw * 0.01),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          child: Text(
+            "Sign Up",
+            style: TextStyle(
+              color: kPrimaryColor,
+              fontSize: sw * 0.034,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

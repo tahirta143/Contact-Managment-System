@@ -1,4 +1,5 @@
 import '../core/utils/date_helper.dart';
+import 'contact_event_model.dart';
 
 class Contact {
   final String id;
@@ -17,6 +18,8 @@ class Contact {
   final DateTime? birthday;        // stored as date only (no time)
   final DateTime? anniversary;     // stored as date only (no time)
   final int? reminderDaysBefore;   // days before to send notification (default: 1)
+  final List<ContactEvent> events;
+  final List<String> groups;       // group/category tags for the contact
   final DateTime createdAt;
 
   Contact({
@@ -36,6 +39,8 @@ class Contact {
     this.birthday,
     this.anniversary,
     this.reminderDaysBefore,
+    this.events = const [],
+    this.groups = const [],
     required this.createdAt,
   });
 
@@ -46,6 +51,15 @@ class Contact {
   int? get daysUntilAnniversary => anniversary != null ? DateHelper.daysUntilNextOccurrence(anniversary!) : null;
 
   factory Contact.fromJson(Map<String, dynamic> json) {
+    // Parse groups - backend returns a List (already parsed in mapContactRow)
+    final rawGroups = json['groups'];
+    List<String> parsedGroups = [];
+    if (rawGroups is List) {
+      parsedGroups = rawGroups.map((g) => g.toString()).toList();
+    } else if (rawGroups is String && rawGroups.isNotEmpty) {
+      parsedGroups = rawGroups.split(',').map((g) => g.trim()).where((g) => g.isNotEmpty).toList();
+    }
+
     return Contact(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
@@ -63,6 +77,11 @@ class Contact {
       birthday: json['birthday'] != null ? DateTime.parse(json['birthday']) : null,
       anniversary: json['anniversary'] != null ? DateTime.parse(json['anniversary']) : null,
       reminderDaysBefore: json['reminderDaysBefore'],
+      events: (json['events'] as List<dynamic>?)
+              ?.map((e) => ContactEvent.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      groups: parsedGroups,
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
     );
   }
@@ -85,6 +104,8 @@ class Contact {
       'birthday': birthday?.toIso8601String(),
       'anniversary': anniversary?.toIso8601String(),
       'reminderDaysBefore': reminderDaysBefore,
+      'events': events.map((e) => e.toJson()).toList(),
+      'groups': groups.join(','),
       'createdAt': createdAt.toIso8601String(),
     };
   }
