@@ -6,11 +6,12 @@ import '../../core/constants/app_strings.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/utils/common_widgets.dart';
 import '../../models/contact_model.dart';
+import '../../providers/auth_provider.dart';
 import 'add_contact_screen.dart';
 import 'contact_detail_screen.dart';
 import 'edit_contact_screen.dart';
-import '../../providers/auth_provider.dart';
 import '../../providers/contacts_provider.dart';
+import '../../core/widgets/custom_loader.dart';
 
 class ContactsListScreen extends ConsumerStatefulWidget {
   const ContactsListScreen({super.key});
@@ -21,9 +22,11 @@ class ContactsListScreen extends ConsumerStatefulWidget {
 
 class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
   final _searchController = TextEditingController();
-  String _activeFilter = 'All';
+  String _activeTab = 'All';
+  final List<String> _filters = ['All', 'By Group'];
 
-  final List<String> _filters = ['All', 'By Group', 'By City', 'By Profession', 'A-Z', 'Z-A'];
+  String _selectedCityFilter = 'All';
+  String _selectedProfessionFilter = 'All';
 
   @override
   void initState() {
@@ -40,18 +43,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
   }
 
   void _onSearchChanged(String value) {
-    ref.read(contactsProvider.notifier).loadContacts(
-      search: value,
-      filter: _activeFilter == 'All' ? null : _activeFilter,
-    );
-  }
-
-  void _onFilterChanged(String filter) {
-    setState(() => _activeFilter = filter);
-    ref.read(contactsProvider.notifier).loadContacts(
-      search: _searchController.text,
-      filter: (filter == 'All' || filter == 'By Group') ? null : filter,
-    );
+    ref.read(contactsProvider.notifier).loadContacts(search: value);
   }
 
   @override
@@ -75,6 +67,8 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
 
     final contactsState = ref.watch(contactsProvider);
 
+
+
     return Scaffold(
       backgroundColor: kScaffoldBg,
       appBar: _buildAppBar(isAdmin, sw),
@@ -82,24 +76,32 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
         children: [
           SizedBox(height: sh * 0.018),
           _buildSearchBar(hPad, searchHeight, sw),
-          SizedBox(height: sh * 0.008),
-          _buildFilterChips(hPad, filterHeight, chipFontSize),
+          SizedBox(height: sh * 0.012),
+          _buildFilterUI(contactsState.contacts, hPad, sw),
           SizedBox(height: sh * 0.01),
           Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: sh * 0.13),
-              child: contactsState.isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : contactsState.error != null
-                      ? Center(child: Text(contactsState.error!))
-                      : contactsState.contacts.isEmpty
-                          ? const Center(child: Text("No contacts found"))
-                          : _buildContactsList(
-                              contactsState.contacts,
-                              isAdmin, hPad, avatarRadius,
-                              titleFontSize, subFontSize,
-                              iconSize, cardRadius, itemSpacing, sw,
-                            ),
+            child: RefreshIndicator(
+              onRefresh: () async {
+                await ref.read(contactsProvider.notifier).loadContacts(
+                  search: _searchController.text,
+                );
+              },
+              color: kPrimaryColor,
+              child: Padding(
+                padding: EdgeInsets.only(bottom: sh * 0.16),
+                child: contactsState.isLoading
+                    ? const Center(child: CustomLoader(message: "Loading..."))
+                    : contactsState.error != null
+                        ? Center(child: Text(contactsState.error!))
+                        : contactsState.contacts.isEmpty
+                            ? const Center(child: Text("No contacts found"))
+                            : _buildContactsList(
+                                contactsState.contacts,
+                                isAdmin, hPad, avatarRadius,
+                                titleFontSize, subFontSize,
+                                iconSize, cardRadius, itemSpacing, sw,
+                              ),
+              ),
             ),
           ),
         ],
@@ -158,39 +160,90 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
     );
   }
 
-  // ── Filter chips ─────────────────────────────────────────────────────────
-  Widget _buildFilterChips(double hPad, double height, double chipFontSize) {
-    return SizedBox(
-      height: height,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.only(left: hPad, right: hPad),
-        itemCount: _filters.length,
-        itemBuilder: (context, index) {
-          final filter = _filters[index];
-          final isSelected = _activeFilter == filter;
-          return Padding(
-            padding: EdgeInsets.only(right: hPad * 0.4),
-            child: GestureDetector(
-              onTap: () => _onFilterChanged(filter),
-              child: Chip(
-                label: Text(
-                  filter,
-                  style: TextStyle(
-                    fontSize: chipFontSize,
-                    color: isSelected ? Colors.white : kTextSecondary,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+  // ── Filter UI ─────────────────────────────────────────────────────────
+  Widget _buildFilterUI(List<Contact> contacts, double hPad, double sw) {
+    final cities = ['All', ...contacts.map((c) => c.city?.trim() ?? '').where((c) => c.isNotEmpty).toSet().toList()..sort()];
+    final professions = ['All', ...contacts.map((c) => c.profession?.trim() ?? '').where((c) => c.isNotEmpty).toSet().toList()..sort()];
+
+    if (!cities.contains(_selectedCityFilter)) _selectedCityFilter = 'All';
+    if (!professions.contains(_selectedProfessionFilter)) _selectedProfessionFilter = 'All';
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: hPad),
+      child: Column(
+        children: [
+          // Tabs
+          SizedBox(
+            height: sw * 0.12,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _filters.length,
+              itemBuilder: (context, index) {
+                final filter = _filters[index];
+                final isSelected = _activeTab == filter;
+                return Padding(
+                  padding: EdgeInsets.only(right: sw * 0.03),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _activeTab = filter),
+                    child: Chip(
+                      label: Text(
+                        filter,
+                        style: TextStyle(
+                          fontSize: sw * 0.032,
+                          color: isSelected ? Colors.white : kTextSecondary,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                      backgroundColor: isSelected ? kPrimaryColor : kInputBg,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide.none,
+                      ),
+                    ),
                   ),
-                ),
-                backgroundColor: isSelected ? kPrimaryColor : kInputBg,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  side: BorderSide.none,
-                ),
-              ),
+                );
+              },
             ),
-          );
-        },
+          ),
+          SizedBox(height: sw * 0.02),
+          // Dropdowns
+          Row(
+            children: [
+              Expanded(child: _buildSmallDropdown("City", cities, _selectedCityFilter, (v) => setState(() => _selectedCityFilter = v!), sw)),
+              SizedBox(width: sw * 0.02),
+              Expanded(child: _buildSmallDropdown("Profession", professions, _selectedProfessionFilter, (v) => setState(() => _selectedProfessionFilter = v!), sw)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSmallDropdown(String label, List<String> items, String value, Function(String?) onChanged, double sw) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: sw * 0.02, vertical: sw * 0.01),
+      decoration: BoxDecoration(
+        color: kInputBg,
+        borderRadius: BorderRadius.circular(sw * 0.02),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          isExpanded: true,
+          icon: Icon(Icons.arrow_drop_down, size: sw * 0.04),
+          style: TextStyle(fontSize: sw * 0.032, color: kTextPrimary),
+          onChanged: onChanged,
+          items: items.map((item) {
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Text(
+                item == 'All' ? '$label (All)' : item,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -207,10 +260,19 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
       double itemSpacing,
       double sw,
       ) {
-    
-    if (_activeFilter == 'By Group') {
+    final displayContacts = contacts.where((c) {
+      if (_selectedCityFilter != 'All' && c.city?.trim() != _selectedCityFilter) return false;
+      if (_selectedProfessionFilter != 'All' && c.profession?.trim() != _selectedProfessionFilter) return false;
+      return true;
+    }).toList();
+
+    if (displayContacts.isEmpty) {
+      return const Center(child: Text("No contacts match the selected filters"));
+    }
+
+    if (_activeTab == 'By Group') {
       final Map<String, List<Contact>> grouped = {};
-      for (final contact in contacts) {
+      for (final contact in displayContacts) {
         if (contact.groups.isEmpty) {
           grouped.putIfAbsent('Uncategorized', () => []).add(contact);
         } else {
@@ -221,70 +283,53 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
       }
       final sortedGroups = grouped.keys.toList()..sort();
       
-      return GridView.builder(
-        padding: EdgeInsets.symmetric(horizontal: hPad, vertical: sw * 0.02),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: sw * 0.03,
-          mainAxisSpacing: sw * 0.03,
-          childAspectRatio: 1.25,
-        ),
+      return ListView.builder(
+        padding: EdgeInsets.symmetric(horizontal: hPad),
         itemCount: sortedGroups.length,
         itemBuilder: (context, index) {
           final groupName = sortedGroups[index];
           final groupContacts = grouped[groupName]!;
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => GroupContactsScreen(
-                    groupName: groupName,
-                    contacts: groupContacts,
-                    isAdmin: isAdmin,
-                  ),
-                ),
-              );
-            },
+          return Padding(
+            padding: EdgeInsets.only(bottom: sw * 0.03),
             child: AppCard(
               borderRadius: cardRadius,
-              padding: EdgeInsets.all(sw * 0.04),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.style, color: kPrimaryColor, size: sw * 0.08),
-                  SizedBox(height: sw * 0.02),
-                  Text(
-                    groupName.toUpperCase(),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: kTextPrimary,
-                      fontSize: sw * 0.038,
-                      fontWeight: FontWeight.bold,
+              padding: EdgeInsets.all(sw * 0.02),
+              child: ListTile(
+                contentPadding: EdgeInsets.symmetric(horizontal: sw * 0.03, vertical: sw * 0.01),
+                leading: Container(
+                  padding: EdgeInsets.all(sw * 0.025),
+                  decoration: BoxDecoration(color: kPrimaryColor.withOpacity(0.1), shape: BoxShape.circle),
+                  child: Icon(Icons.style, color: kPrimaryColor, size: sw * 0.06),
+                ),
+                title: Text(groupName.toUpperCase(), style: TextStyle(color: kTextPrimary, fontSize: titleFontSize, fontWeight: FontWeight.bold)),
+                subtitle: Text("${groupContacts.length} Contact${groupContacts.length == 1 ? '' : 's'}", style: TextStyle(color: kTextSecondary, fontSize: subFontSize)),
+                trailing: Icon(Icons.chevron_right, color: kTextTertiary, size: iconSize),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => GroupContactsScreen(
+                        groupName: groupName,
+                        contacts: groupContacts,
+                        isAdmin: isAdmin,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: sw * 0.01),
-                  Text(
-                    "${groupContacts.length} Contact${groupContacts.length == 1 ? '' : 's'}",
-                    style: TextStyle(color: kTextSecondary, fontSize: subFontSize),
-                  ),
-                ],
-              ),
+                  );
+                },
+              )
             ),
           );
         },
       );
     }
 
-    // Default list view
+      // Default list view
     return ListView.builder(
       padding: EdgeInsets.symmetric(horizontal: hPad),
-      itemCount: contacts.length,
+      itemCount: displayContacts.length,
       itemBuilder: (context, index) {
         return _buildContactCard(
-          contacts[index], isAdmin, avatarRadius, titleFontSize, 
+          displayContacts[index], isAdmin, avatarRadius, titleFontSize, 
           subFontSize, iconSize, cardRadius, itemSpacing, sw,
         );
       },
@@ -340,9 +385,33 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
           ),
           subtitle: Padding(
             padding: EdgeInsets.only(top: sw * 0.008),
-            child: Text(
-              "${contact.designation ?? ''}${contact.designation != null && contact.city != null ? ' · ' : ''}${contact.city ?? ''}",
-              style: TextStyle(color: kTextSecondary, fontSize: subFontSize),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (contact.company != null && contact.company!.isNotEmpty)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: sw * 0.008),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.business, size: sw * 0.035, color: kPrimaryColor),
+                        SizedBox(width: sw * 0.01),
+                        Expanded(
+                          child: Text(
+                            contact.company!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: kPrimaryColor, fontSize: subFontSize, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                Text(
+                  "${contact.designation ?? ''}${contact.designation != null && contact.city != null ? ' · ' : ''}${contact.city ?? ''}",
+                  style: TextStyle(color: kTextSecondary, fontSize: subFontSize),
+                ),
+              ],
             ),
           ),
           trailing: isAdmin
@@ -542,9 +611,33 @@ class _GroupContactsScreenState extends ConsumerState<GroupContactsScreen> {
                       ),
                       subtitle: Padding(
                         padding: EdgeInsets.only(top: sw * 0.008),
-                        child: Text(
-                          "${contact.designation ?? ''}${contact.designation != null && contact.city != null ? ' · ' : ''}${contact.city ?? ''}",
-                          style: TextStyle(color: kTextSecondary, fontSize: subFontSize),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (contact.company != null && contact.company!.isNotEmpty)
+                              Padding(
+                                padding: EdgeInsets.only(bottom: sw * 0.008),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.business, size: sw * 0.035, color: kPrimaryColor),
+                                    SizedBox(width: sw * 0.01),
+                                    Expanded(
+                                      child: Text(
+                                        contact.company!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(color: kPrimaryColor, fontSize: subFontSize, fontWeight: FontWeight.w500),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            Text(
+                              "${contact.designation ?? ''}${contact.designation != null && contact.city != null ? ' · ' : ''}${contact.city ?? ''}",
+                              style: TextStyle(color: kTextSecondary, fontSize: subFontSize),
+                            ),
+                          ],
                         ),
                       ),
                       trailing: widget.isAdmin

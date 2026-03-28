@@ -215,26 +215,26 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             validator: (v) =>
             v != _passwordController.text ? "Passwords do not match" : null,
           ),
-          SizedBox(height: sh * 0.024),
+          // SizedBox(height: sh * 0.024),
 
           // Role selector
-          Text(
-            "SELECT ROLE",
-            style: TextStyle(
-              color: kTextSecondary,
-              fontSize: sw * 0.028,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
-          ),
+          // Text(
+          //   "SELECT ROLE",
+          //   style: TextStyle(
+          //     color: kTextSecondary,
+          //     fontSize: sw * 0.028,
+          //     fontWeight: FontWeight.w600,
+          //     letterSpacing: 0.5,
+          //   ),
+          // ),
           SizedBox(height: sh * 0.01),
-          Row(
-            children: [
-              _buildRoleBtn("Admin", sw, sh),
-              SizedBox(width: sw * 0.03),
-              _buildRoleBtn("User",  sw, sh),
-            ],
-          ),
+          // Row(
+          //   children: [
+          //     _buildRoleBtn("Admin", sw, sh),
+          //     SizedBox(width: sw * 0.03),
+          //     _buildRoleBtn("User",  sw, sh),
+          //   ],
+          // ),
           SizedBox(height: sh * 0.028),
 
           SizedBox(

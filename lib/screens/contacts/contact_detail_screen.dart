@@ -125,7 +125,7 @@ class ContactDetailScreen extends ConsumerWidget {
                       final diff = e.date.difference(DateTime.now()).inDays;
                       return _buildDateCard(
                         context,
-                        e.type,
+                        e.label != null && e.label!.isNotEmpty ? "${e.type}: ${e.label}" : e.type,
                         DateFormat('dd MMMM yyyy').format(e.date),
                         Icons.event,
                         kPrimaryColor,

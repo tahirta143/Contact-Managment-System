@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import '../core/constants/api_constants.dart';
 import '../models/contact_model.dart';
 import 'auth_service.dart';
@@ -51,8 +52,17 @@ class ContactService {
     });
 
     // Add image
-    if (imagePath != null) {
-      request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+    if (imagePath != null && imagePath.isNotEmpty) {
+      final ext = imagePath.toLowerCase().split('.').last;
+      String mimeType = "image/jpeg";
+      if (ext == "png") mimeType = "image/png";
+      else if (ext == "webp") mimeType = "image/webp";
+
+      request.files.add(await http.MultipartFile.fromPath(
+        'image',
+        imagePath,
+        contentType: MediaType.parse(mimeType),
+      ));
     }
 
     final streamedResponse = await request.send();
@@ -62,7 +72,9 @@ class ContactService {
       return Contact.fromJson(jsonDecode(response.body));
     } else {
       final data = jsonDecode(response.body);
-      throw Exception(data['message'] ?? "Failed to add contact");
+      final errorMsg = data['message'] ?? "Failed to add contact";
+      if (data['debug'] != null) print("❌ BACKEND DEBUG: ${data['debug']}");
+      throw Exception(errorMsg);
     }
   }
 
@@ -85,8 +97,17 @@ class ContactService {
     });
 
     // Add image
-    if (imagePath != null) {
-      request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+    if (imagePath != null && imagePath.isNotEmpty) {
+      final ext = imagePath.toLowerCase().split('.').last;
+      String mimeType = "image/jpeg";
+      if (ext == "png") mimeType = "image/png";
+      else if (ext == "webp") mimeType = "image/webp";
+
+      request.files.add(await http.MultipartFile.fromPath(
+        'image',
+        imagePath,
+        contentType: MediaType.parse(mimeType),
+      ));
     }
 
     final streamedResponse = await request.send();
@@ -96,7 +117,9 @@ class ContactService {
       return Contact.fromJson(jsonDecode(response.body));
     } else {
       final data = jsonDecode(response.body);
-      throw Exception(data['message'] ?? "Failed to update contact");
+      final errorMsg = data['message'] ?? "Failed to update contact";
+      if (data['debug'] != null) print("❌ BACKEND DEBUG: ${data['debug']}");
+      throw Exception(errorMsg);
     }
   }
 

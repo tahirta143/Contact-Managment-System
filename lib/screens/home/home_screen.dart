@@ -12,6 +12,7 @@ import '../../providers/contacts_provider.dart';
 import '../../providers/events_provider.dart';
 import '../../providers/reminders_provider.dart';
 import '../dates/dates_home_screen.dart';
+import '../../core/widgets/custom_loader.dart';
 
 // ─── Themed colors for icons (independent of AppBar/primary color) ───────────
 const Color kBirthdayColor    = Color(0xFFFF6B9D); // pink
@@ -116,11 +117,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final hPad = sw * 0.045;
 
     // ── Must match the height of your bottom nav bar ──────────────────────
-    const double bottomNavHeight = 80.0;
-    const double fabMargin       = 29.0;
+    const double bottomNavHeight = 90.0;
+    const double fabMargin       = 32.0;
 
     // Scroll content clears both the nav bar and the FAB above it
-    final double scrollBottomPad = bottomNavHeight + 54 + fabMargin * 2;
+    final double scrollBottomPad = bottomNavHeight + 80 + fabMargin;
 
     final contactsState = ref.watch(contactsProvider);
     final upcomingEvents = ref.watch(upcomingEventsProvider(30));
@@ -156,6 +157,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
     });
 
+    final Set<String> uniqueGroups = {};
+    for (var c in contactsState.contacts) {
+      if (c.groups != null) {
+        uniqueGroups.addAll(c.groups!.map((g) => g.toString()));
+      }
+    }
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: _buildAppBar(sw),
@@ -164,7 +172,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: _buildFAB(sw),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      body: RefreshIndicator(
+      body: (contactsState.isLoading || remindersState.isLoading)
+          ? const Center(child: CustomLoader(message: "Loading..."))
+          : RefreshIndicator(
         onRefresh: () async {
           ref.read(contactsProvider.notifier).loadContacts();
           ref.read(remindersProvider.notifier).loadReminders();
@@ -197,7 +207,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         child: child!,
                       ),
                     );
-                    if (date != null) setState(() => _selectedHomeDate = date);
+                    if (date != null) {
+                      setState(() => _selectedHomeDate = date);
+                      // Trigger a fresh data load when date changes
+                      ref.read(contactsProvider.notifier).loadContacts();
+                      ref.read(remindersProvider.notifier).loadReminders();
+                      ref.invalidate(upcomingEventsProvider(30));
+                    }
                   },
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: sw * 0.04, vertical: sh * 0.016),
@@ -227,11 +243,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
 
               SizedBox(height: sh * 0.028),
+
               _buildSummaryCards(
                 contactsCount: contactsState.contacts.length,
                 todayEventsCount: selectedDateBirthdays.length + selectedDateAnniversaries.length + selectedDateCustomEvents.length,
                 upcomingCount: upcomingReminders.length,
-                remindersCount: remindersState.reminders.where((r) => !r.isCompleted).length,
+                groupsCount: uniqueGroups.length,
                 hPad: hPad, sw: sw, sh: sh,
               ),
               SizedBox(height: sh * 0.028),
@@ -253,7 +270,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               _buildSectionHeader("Upcoming Events", hPad, kUpcomingColor, sw, sh),
               upcomingEvents.when(
                 data: (events) => _buildUpcomingList(upcomingReminders, hPad, sw, sh),
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () => const SizedBox.shrink(), // Already handled by full screen loader
                 error: (e, __) => Padding(
                   padding: EdgeInsets.symmetric(horizontal: hPad),
                   child: Text("Error: $e", style: const TextStyle(color: Colors.red)),
@@ -306,21 +323,82 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final now  = DateTime.now();
     final date = DateFormat('EEEE, d MMMM yyyy').format(now);
     final hour = now.hour;
-    final greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+    
+    String greeting;
+    IconData timeIcon;
+    List<Color> gradientColors;
+
+    if (hour < 12) {
+      greeting = "Good morning";
+      timeIcon = Icons.wb_sunny_rounded;
+      gradientColors = [const Color(0xFFF7971E), const Color(0xFFFFD200)]; // Vibrant sunrise
+    } else if (hour < 17) {
+      greeting = "Good afternoon";
+      timeIcon = Icons.cloud_rounded;
+      gradientColors = [const Color(0xff21b2d5), const Color(0xff29b3d5)]; // Bright afternoon
+    } else {
+      greeting = "Good evening";
+      timeIcon = Icons.nights_stay_rounded;
+      gradientColors = [const Color(0xFF2C3E50), const Color(0xFF3498DB)]; // Evening dusk
+    }
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: hPad),
-      child: AppCard(
-        padding: EdgeInsets.all(sw * 0.05),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "$greeting, $name!",
-              style: TextStyle(fontSize: sw * 0.045, fontWeight: FontWeight.bold, color: kTextPrimary),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(sw * 0.06),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(sw * 0.05),
+          gradient: LinearGradient(
+            colors: gradientColors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: gradientColors.last.withOpacity(0.4),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
             ),
-            SizedBox(height: sh * 0.006),
-            Text(date, style: TextStyle(fontSize: sw * 0.032, color: kTextSecondary)),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    date.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: sw * 0.028,
+                      color: Colors.white.withOpacity(0.85),
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  SizedBox(height: sh * 0.006),
+                  Text(
+                    "$greeting,\n$name!",
+                    style: TextStyle(
+                      fontSize: sw * 0.052,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      height: 1.25,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.all(sw * 0.035),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.25),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(timeIcon, color: Colors.white, size: sw * 0.08),
+            ),
           ],
         ),
       ),
@@ -332,7 +410,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     required int contactsCount,
     required int todayEventsCount,
     required int upcomingCount,
-    required int remindersCount,
+    required int groupsCount,
     required double hPad,
     required double sw,
     required double sh,
@@ -349,7 +427,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _buildCountCard("Total Contacts", contactsCount, Icons.people_outline,      kContactsColor, sw, sh),
         _buildCountCard("Today's Events", todayEventsCount,   Icons.event_available,     kEventsColor,   sw, sh),
         _buildCountCard("Upcoming",       upcomingCount,  Icons.upcoming,            kUpcomingColor, sw, sh),
-        _buildCountCard("Reminders",      remindersCount,   Icons.notifications_active_outlined, kGroupsColor,   sw, sh),
+        _buildCountCard("Groups",         groupsCount,    Icons.group_work_outlined, kGroupsColor,   sw, sh),
       ],
     );
   }
@@ -550,7 +628,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       SizedBox(width: sw * 0.008),
                       Flexible(
                         child: Text(
-                          item['type'] ?? "Event",
+                          item['label'] != null && item['label'].isNotEmpty
+                              ? item['label']
+                              : (item['type'] ?? "Event"),
                           style: TextStyle(color: kCustomEventColor, fontSize: sw * 0.024),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -624,7 +704,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       SizedBox(height: sh * 0.003),
                       Text(
-                        "${item['type']} · $formattedDate",
+                        "${item['type']}${item['label'] != null && item['label'].isNotEmpty ? ' (${item['label']})' : ''} · $formattedDate",
                         style: TextStyle(color: kTextSecondary, fontSize: sw * 0.029),
                       ),
                     ],

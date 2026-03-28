@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/common_widgets.dart';
 import '../../providers/contacts_provider.dart';
+import '../../core/widgets/custom_loader.dart';
 import '../../models/contact_model.dart';
 
 // ─── Event theme colors (consistent with HomeScreen & ContactDetailScreen) ────
@@ -51,7 +52,7 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
           SizedBox(height: sh * 0.008),
           Expanded(
             child: contactsState.isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: CustomLoader(message: "Loading..."))
                 : contactsState.error != null
                     ? Center(child: Text(contactsState.error!))
                     : _buildBodyForFilter(contacts, hPad, sw, sh),
@@ -249,22 +250,28 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
         SizedBox(height: sh * 0.012),
         // Results
         Expanded(
-          child: flatEvents.isEmpty
-              ? const Center(child: Text("No events on this date"))
-              : ListView.builder(
-            padding: EdgeInsets.symmetric(horizontal: hPad, vertical: sh * 0.008),
-            itemCount: flatEvents.length,
-            itemBuilder: (context, index) {
-              final ev = flatEvents[index];
-              return _buildEventCard(
-                ev['name'],
-                ev['type'],
-                ev['subtitle'],
-                ev['icon'],
-                ev['color'],
-                sw, sh,
-              );
+          child: RefreshIndicator(
+            onRefresh: () async {
+              await ref.read(contactsProvider.notifier).loadContacts();
             },
+            color: kPrimaryColor,
+            child: flatEvents.isEmpty
+                ? const Center(child: Text("No events on this date"))
+                : ListView.builder(
+              padding: EdgeInsets.symmetric(horizontal: hPad, vertical: sh * 0.008).copyWith(bottom: sh * 0.16),
+              itemCount: flatEvents.length,
+              itemBuilder: (context, index) {
+                final ev = flatEvents[index];
+                return _buildEventCard(
+                  ev['name'],
+                  ev['type'],
+                  ev['subtitle'],
+                  ev['icon'],
+                  ev['color'],
+                  sw, sh,
+                );
+              },
+            ),
           ),
         ),
       ],
@@ -307,15 +314,21 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
         ),
         SizedBox(height: sh * 0.012),
         Expanded(
-          child: filtered.isEmpty
-              ? const Center(child: Text("No persons with events found"))
-              : ListView.builder(
-            padding: EdgeInsets.symmetric(horizontal: hPad, vertical: sh * 0.008),
-            itemCount: filtered.length,
-            itemBuilder: (context, index) {
-              final c = filtered[index];
-              return _buildPersonBlock(c, sw, sh);
+          child: RefreshIndicator(
+            onRefresh: () async {
+              await ref.read(contactsProvider.notifier).loadContacts();
             },
+            color: kPrimaryColor,
+            child: filtered.isEmpty
+                ? const Center(child: Text("No persons with events found"))
+                : ListView.builder(
+              padding: EdgeInsets.symmetric(horizontal: hPad, vertical: sh * 0.008).copyWith(bottom: sh * 0.16),
+              itemCount: filtered.length,
+              itemBuilder: (context, index) {
+                final c = filtered[index];
+                return _buildPersonBlock(c, sw, sh);
+              },
+            ),
           ),
         ),
       ],
@@ -344,55 +357,50 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
                 ),
               ],
             ),
-            SizedBox(height: sh * 0.018),
-            // Birthday row
-            if (bdayStr != null)  ...[
-              _buildPersonDetailRow(Icons.cake, "Birthday", bdayStr, kBirthdayColor, sw, sh),
-              SizedBox(height: sh * 0.012),
-            ],
-            // Anniversary row
-            if (anniStr != null) ...[
-              _buildPersonDetailRow(Icons.favorite, "Anniversary", anniStr, kAnniversaryColor, sw, sh),
-              SizedBox(height: sh * 0.012),
-            ],
-            // Custom Events
-            ...c.events.map((e) {
-              final evStr = DateFormat('dd MMM yyyy').format(e.date);
-              return Padding(
-                padding: EdgeInsets.only(bottom: sh * 0.012),
-                child: _buildPersonDetailRow(Icons.event, e.type, evStr, kCustomEventColor, sw, sh),
-              );
-            }).toList(),
+            SizedBox(height: sh * 0.012),
+            Wrap(
+              spacing: sw * 0.02,
+              runSpacing: sh * 0.01,
+              children: [
+                if (bdayStr != null)
+                  _buildSmallDetailChip(Icons.cake, "Birthday: $bdayStr", kBirthdayColor, sw),
+                if (anniStr != null)
+                  _buildSmallDetailChip(Icons.favorite, "Anniversary: $anniStr", kAnniversaryColor, sw),
+                ...c.events.map((e) {
+                  final evStr = DateFormat('dd MMM yyyy').format(e.date);
+                  return _buildSmallDetailChip(Icons.event, "${e.type}: $evStr", kCustomEventColor, sw);
+                }).toList(),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPersonDetailRow(IconData icon, String label, String value, Color color, double sw, double sh) {
-    return Row(
-      children: [
-        // Themed icon container
-        Container(
-          width: sw * 0.09,
-          height: sw * 0.09,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.12),
-            shape: BoxShape.circle,
+  Widget _buildSmallDetailChip(IconData icon, String text, Color color, double sw) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: sw * 0.025, vertical: sw * 0.015),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(sw * 0.02),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: sw * 0.035),
+          SizedBox(width: sw * 0.015),
+          Text(
+            text,
+            style: TextStyle(color: kTextPrimary, fontSize: sw * 0.03, fontWeight: FontWeight.bold),
           ),
-          child: Icon(icon, color: color, size: sw * 0.045),
-        ),
-        SizedBox(width: sw * 0.03),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: TextStyle(color: kTextSecondary, fontSize: sw * 0.028)),
-            Text(value,  style: TextStyle(color: kTextPrimary,  fontSize: sw * 0.036, fontWeight: FontWeight.bold)),
-          ],
-        ),
-      ],
+        ],
+      ),
     );
   }
+
+
 
   // ══════════════════════════════════════════════════════════════════════════
   // EVENT-WISE VIEW
@@ -467,22 +475,28 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
         SizedBox(height: sh * 0.012),
         // List
         Expanded(
-          child: flatEvents.isEmpty
-              ? Center(child: Text("No $_selectedEventType events recorded"))
-              : ListView.builder(
-            padding: EdgeInsets.symmetric(horizontal: hPad, vertical: sh * 0.008),
-            itemCount: flatEvents.length,
-            itemBuilder: (context, index) {
-              final ev = flatEvents[index];
-              return _buildEventCard(
-                ev['name'],
-                ev['dateStr'],
-                ev['subtitle'],
-                ev['icon'],
-                ev['color'],
-                sw, sh,
-              );
+          child: RefreshIndicator(
+            onRefresh: () async {
+              await ref.read(contactsProvider.notifier).loadContacts();
             },
+            color: kPrimaryColor,
+            child: flatEvents.isEmpty
+                ? Center(child: Text("No $_selectedEventType events recorded"))
+                : ListView.builder(
+              padding: EdgeInsets.symmetric(horizontal: hPad, vertical: sh * 0.008).copyWith(bottom: sh * 0.16),
+              itemCount: flatEvents.length,
+              itemBuilder: (context, index) {
+                final ev = flatEvents[index];
+                return _buildEventCard(
+                  ev['name'],
+                  ev['dateStr'],
+                  ev['subtitle'],
+                  ev['icon'],
+                  ev['color'],
+                  sw, sh,
+                );
+              },
+            ),
           ),
         ),
       ],

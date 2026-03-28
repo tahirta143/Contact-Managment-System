@@ -6,6 +6,7 @@ import '../../providers/events_provider.dart';
 import '../../providers/reminders_provider.dart';
 import '../../models/reminder_model.dart';
 import 'add_reminder_screen.dart';
+import '../../core/widgets/custom_loader.dart';
 
 // Same event colors as DatesHomeScreen & HomeScreen
 const Color kBirthdayColor    = Color(0xFFFF6B9D);
@@ -34,87 +35,97 @@ class RemindersScreen extends ConsumerWidget {
         backgroundColor: kPrimaryColor,
         child: const Icon(Icons.add_alert, color: Colors.white),
       ),
-      body: ListView(
-        padding: EdgeInsets.only(bottom: sh * 0.12),
-        children: [
-          SizedBox(height: sh * 0.016),
-          _buildInfoBanner(hPad, sw),
-          Padding(
-            padding: EdgeInsets.fromLTRB(hPad, sh * 0.024, hPad, sh * 0.014),
-            child: Text(
-              "Upcoming Events",
-              style: TextStyle(
-                color: kTextPrimary,
-                fontSize: sw * 0.048,
-                fontWeight: FontWeight.bold,
+      body: (remindersState.isLoading || eventsAsync.isLoading)
+          ? const Center(child: CustomLoader(message: "Loading..."))
+          : RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(upcomingEventsProvider(30));
+          await ref.read(remindersProvider.notifier).loadReminders();
+        },
+        color: kPrimaryColor,
+        child: ListView(
+          padding: EdgeInsets.only(bottom: sh * 0.16),
+          children: [
+            SizedBox(height: sh * 0.016),
+            _buildInfoBanner(hPad, sw),
+            Padding(
+              padding: EdgeInsets.fromLTRB(hPad, sh * 0.024, hPad, sh * 0.014),
+              child: Text(
+                "Upcoming Events",
+                style: TextStyle(
+                  color: kTextPrimary,
+                  fontSize: sw * 0.048,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ),
-          eventsAsync.when(
-            data: (events) {
-              if (events.isEmpty) {
-                return const Center(child: Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Text("No upcoming birthdays or anniversaries"),
-                ));
-              }
-              return Column(
-                children: events.map((e) {
-                  final eventDate = DateTime.tryParse(e['date'] ?? "");
-                  final days = eventDate != null ? eventDate.difference(DateTime.now()).inDays + 1 : 0;
-                  return _buildReminderCard(
-                    name: e['contactName'] ?? "Unknown",
-                    type: e['type'] ?? "Event",
-                    date: e['date'] ?? "",
+            eventsAsync.when(
+              data: (events) {
+                if (events.isEmpty) {
+                  return const Center(child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Text("No upcoming birthdays or anniversaries"),
+                  ));
+                }
+                return Column(
+                  children: events.map((e) {
+                    final eventDate = DateTime.tryParse(e['date'] ?? "");
+                    final days = eventDate != null ? eventDate.difference(DateTime.now()).inDays + 1 : 0;
+                    return _buildReminderCard(
+                      name: e['contactName'] ?? "Unknown",
+                      type: e['type'] ?? "Event",
+                      label: e['label'],
+                      // date: e['date'] ?? "",
+                      daysUntil: days < 0 ? 0 : days,
+                      hPad: hPad, sw: sw, sh: sh,
+                    );
+                  }).toList(),
+                );
+              },
+              loading: () => const SizedBox.shrink(),
+              error: (err, _) => Center(child: Text("Error: $err")),
+            ),
+
+            Padding(
+              padding: EdgeInsets.fromLTRB(hPad, sh * 0.024, hPad, sh * 0.014),
+              child: Text(
+                "Custom Reminders",
+                style: TextStyle(
+                  color: kTextPrimary,
+                  fontSize: sw * 0.048,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            if (remindersState.isLoading)
+              const SizedBox.shrink()
+            else if (remindersState.error != null)
+              Center(child: Text(remindersState.error!))
+            else if (remindersState.reminders.isEmpty)
+              const Center(child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Text("No custom reminders set"),
+              ))
+            else
+              Column(
+                children: remindersState.reminders.map((r) {
+                  final date = DateTime.tryParse(r.reminderDate);
+                  final days = date != null ? date.difference(DateTime.now()).inDays + 1 : 0;
+                  return _buildDynamicReminderCard(
+                    context: context,
+                    ref: ref,
+                    id: r.id,
+                    title: r.title,
+                    description: r.description ?? "",
+                    date: r.reminderDate,
                     daysUntil: days < 0 ? 0 : days,
+                    isCompleted: r.isCompleted,
                     hPad: hPad, sw: sw, sh: sh,
                   );
                 }).toList(),
-              );
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, _) => Center(child: Text("Error: $err")),
-          ),
-
-          Padding(
-            padding: EdgeInsets.fromLTRB(hPad, sh * 0.024, hPad, sh * 0.014),
-            child: Text(
-              "Custom Reminders",
-              style: TextStyle(
-                color: kTextPrimary,
-                fontSize: sw * 0.048,
-                fontWeight: FontWeight.bold,
               ),
-            ),
-          ),
-          if (remindersState.isLoading)
-            const Center(child: CircularProgressIndicator())
-          else if (remindersState.error != null)
-            Center(child: Text(remindersState.error!))
-          else if (remindersState.reminders.isEmpty)
-            const Center(child: Padding(
-              padding: EdgeInsets.all(20),
-              child: Text("No custom reminders set"),
-            ))
-          else
-            Column(
-              children: remindersState.reminders.map((r) {
-                final date = DateTime.tryParse(r.reminderDate);
-                final days = date != null ? date.difference(DateTime.now()).inDays + 1 : 0;
-                return _buildDynamicReminderCard(
-                  context: context,
-                  ref: ref,
-                  id: r.id,
-                  title: r.title,
-                  description: r.description ?? "",
-                  date: r.reminderDate,
-                  daysUntil: days < 0 ? 0 : days,
-                  isCompleted: r.isCompleted,
-                  hPad: hPad, sw: sw, sh: sh,
-                );
-              }).toList(),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -323,7 +334,8 @@ class RemindersScreen extends ConsumerWidget {
   Widget _buildReminderCard({
     required String name,
     required String type,
-    required String date,
+    String? label,
+    // required String date,
     required int daysUntil,
     required double hPad,
     required double sw,
@@ -368,29 +380,29 @@ class RemindersScreen extends ConsumerWidget {
                   ),
                   SizedBox(height: sh * 0.004),
                   Text(
-                    type,
+                    label != null && label.isNotEmpty ? "$type: $label" : type,
                     style: TextStyle(color: kTextSecondary, fontSize: sw * 0.029),
                   ),
                   SizedBox(height: sh * 0.004),
                   // Colored date badge — same pattern as DatesHomeScreen
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: sw * 0.02,
-                      vertical:   sh * 0.004,
-                    ),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(sw * 0.015),
-                    ),
-                    child: Text(
-                      date,
-                      style: TextStyle(
-                        color: color,
-                        fontSize: sw * 0.028,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  // Container(
+                  //   padding: EdgeInsets.symmetric(
+                  //     horizontal: sw * 0.02,
+                  //     vertical:   sh * 0.004,
+                  //   ),
+                  //   decoration: BoxDecoration(
+                  //     color: color.withOpacity(0.12),
+                  //     borderRadius: BorderRadius.circular(sw * 0.015),
+                  //   ),
+                  //   // child: Text(
+                  //   //   // date,
+                  //   //   style: TextStyle(
+                  //   //     color: color,
+                  //   //     fontSize: sw * 0.028,
+                  //   //     fontWeight: FontWeight.bold,
+                  //   //   ),
+                  //   // ),
+                  // ),
                 ],
               ),
             ),

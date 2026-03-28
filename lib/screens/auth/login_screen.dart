@@ -4,6 +4,8 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/common_widgets.dart';
 import '../../providers/auth_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import '../main_screen.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
@@ -77,6 +79,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     _buildSocialRow(sw, sh),
                     SizedBox(height: sh * 0.012),
                     _buildSignUpRow(sw),
+                    SizedBox(height: sh * 0.012),
+                    _buildDeveloperCredit(sw),
                     SizedBox(height: sh * 0.04),
                   ],
                 ),
@@ -415,6 +419,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               color: kPrimaryColor,
               fontSize: sw * 0.034,
               fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Developer credit ───────────────────────────────────────────────────────
+  Widget _buildDeveloperCredit(double sw) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          "Developed by",
+          style: TextStyle(color: kTextSecondary, fontSize: sw * 0.034),
+        ),
+        TextButton(
+          onPressed: () async {
+            final url = Uri.parse('https://afaqtechnologies.com.pk/');
+            await launchUrl(url, mode: LaunchMode.externalApplication);
+          },
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.only(left: sw * 0.01),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          child: Text(
+            "Afaq Technologies",
+            style: TextStyle(
+              color: kPrimaryColor,
+              fontSize: sw * 0.034,
+              fontWeight: FontWeight.bold,
+              decoration: TextDecoration.underline,
+              decorationColor: kPrimaryColor,
             ),
           ),
         ),

@@ -25,6 +25,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
   final _designationController      = TextEditingController();
   final _referenceController        = TextEditingController();
   final _professionController       = TextEditingController();
+  final _companyController          = TextEditingController();
   final _specialityController       = TextEditingController();
   final _phoneController            = TextEditingController();
   final _mobileController           = TextEditingController();
@@ -48,6 +49,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
     _designationController.dispose();
     _referenceController.dispose();
     _professionController.dispose();
+    _companyController.dispose();
     _specialityController.dispose();
     _phoneController.dispose();
     _mobileController.dispose();
@@ -60,16 +62,52 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
   }
 
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _imagePath = pickedFile.path;
-      });
-    }
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Camera'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final picker = ImagePicker();
+                  final pickedFile = await picker.pickImage(source: ImageSource.camera);
+                  if (pickedFile != null) setState(() => _imagePath = pickedFile.path);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Gallery'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final picker = ImagePicker();
+                  final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+                  if (pickedFile != null) setState(() => _imagePath = pickedFile.path);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _addCustomEvent() {
+    if (_customEvents.isNotEmpty && (_customEvents.last.label?.isEmpty ?? true)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please fill the previous event label before adding a new one."),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
     setState(() {
       _customEvents.add(ContactEvent(
         type: 'Other',
@@ -101,6 +139,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
         "designation": _designationController.text.trim(),
         "reference": _referenceController.text.trim(),
         "profession": _professionController.text.trim(),
+        "company": _companyController.text.trim(),
         "speciality": _specialityController.text.trim(),
         "phone": _phoneController.text.trim(),
         "mobile": _mobileController.text.trim(),
@@ -176,11 +215,15 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
               _buildPhotoSection(avatarRadius, sw),
               SizedBox(height: sh * 0.035),
 
+              _buildGroupsSection(context, sw, sh),
+              SizedBox(height: sh * 0.028),
+
               _buildSectionHeader(context, "Personal Info"),
               _buildTextField(context, _nameController, "Full Name*", Icons.person_outline, required: true),
               _buildTextField(context, _designationController, "Designation", Icons.work_outline),
               _buildTextField(context, _referenceController, "Reference", Icons.people_outline),
               _buildTextField(context, _professionController, "Profession", Icons.business_center_outlined),
+              _buildTextField(context, _companyController, "Company", Icons.apartment_outlined),
               _buildTextField(context, _specialityController, "Speciality", Icons.star_outline),
 
               SizedBox(height: sh * 0.028),
@@ -199,9 +242,6 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
               _buildSectionHeader(context, "Important Dates"),
               _buildDatePicker(context, "Birthday", _birthday, (d) => setState(() => _birthday = d), Icons.cake_outlined, kBirthdayColor),
               _buildDatePicker(context, "Anniversary", _anniversary, (d) => setState(() => _anniversary = d), Icons.favorite_outline, kAnniversaryColor),
-
-              SizedBox(height: sh * 0.028),
-              _buildGroupsSection(context, sw, sh),
 
               SizedBox(height: sh * 0.028),
               _buildDynamicEventsSection(context, sw, sh),
@@ -330,6 +370,13 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
   }
 
   Widget _buildGroupsSection(BuildContext context, double sw, double sh) {
+    final allContacts = ref.read(contactsProvider).contacts;
+    final Set<String> allExistingGroups = {};
+    for (final c in allContacts) {
+      allExistingGroups.addAll(c.groups);
+    }
+    final availableGroups = allExistingGroups.where((g) => !_selectedGroups.contains(g)).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -366,6 +413,17 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
                   },
                 ),
               ),
+              if (availableGroups.isNotEmpty)
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.arrow_drop_down, color: kTextSecondary, size: sw * 0.06),
+                  tooltip: "Select from previous groups",
+                  onSelected: (val) {
+                    setState(() => _selectedGroups.add(val));
+                  },
+                  itemBuilder: (context) {
+                    return availableGroups.map((g) => PopupMenuItem(value: g, child: Text(g))).toList();
+                  },
+                ),
               GestureDetector(
                 onTap: () {
                   final trimmed = _groupController.text.trim();

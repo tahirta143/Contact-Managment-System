@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/utils/common_widgets.dart';
+import '../../providers/contacts_provider.dart';
+import '../../providers/events_provider.dart';
+import '../../providers/reminders_provider.dart';
 import 'contacts/contacts_list_screen.dart';
 import 'dates/dates_home_screen.dart';
 import 'home/home_screen.dart';
@@ -30,11 +33,34 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     const ContactsListScreen(),
     const DatesHomeScreen(),
     const RemindersScreen(),
-    const SettingsScreen(),
-    const AdminProfileScreen(),
+    const AdminProfileScreen(), // Index 4 now maps to Profile directly
+    const SettingsScreen(),     // Index 5 (currently unused/hidden by user)
     const ChangePasswordScreen(),
     const UserManagementScreen(),
   ];
+
+  void _onTabTapped(int index) {
+    if (_selectedIndex != index) {
+      setState(() => _selectedIndex = index);
+    }
+    
+    // Auto-refresh data for the selected screen
+    switch (index) {
+      case 0:
+        ref.read(contactsProvider.notifier).loadContacts();
+        ref.read(remindersProvider.notifier).loadReminders();
+        ref.invalidate(upcomingEventsProvider(30));
+        break;
+      case 1:
+      case 2:
+        ref.read(contactsProvider.notifier).loadContacts();
+        break;
+      case 3:
+        ref.read(remindersProvider.notifier).loadReminders();
+        ref.invalidate(upcomingEventsProvider(30));
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,11 +112,11 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                   ),
 
                   // ── Settings nav ──────────────────────────────────
-                  _buildDrawerItem(Icons.settings,        "Settings",        4, sw, sh),
-                  _buildDrawerItem(Icons.person,          "Profile",         5, sw, sh),
+                  // _buildDrawerItem(Icons.settings,        "Settings",        5, sw, sh),
+                  _buildDrawerItem(Icons.person,          "Profile",         4, sw, sh),
                   _buildDrawerItem(Icons.lock_reset,      "Change Password", 6, sw, sh),
-                  if (isAdmin)
-                    _buildDrawerItem(Icons.manage_accounts, "User Management", 7, sw, sh),
+                  // if (isAdmin)
+                  //   _buildDrawerItem(Icons.manage_accounts, "User Management", 7, sw, sh),
                 ],
               ),
             ),
@@ -178,7 +204,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
     return InkWell(
       onTap: () {
-        setState(() => _selectedIndex = index);
+        _onTabTapped(index);
         Navigator.pop(context);
       },
       child: Container(
@@ -308,13 +334,13 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           type: BottomNavigationBarType.fixed,
           selectedItemColor: Colors.white,
           unselectedItemColor: Colors.white54,
-          onTap: (index) => setState(() => _selectedIndex = index),
+          onTap: _onTabTapped,
           items: [
             const BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: "Home"),
             const BottomNavigationBarItem(icon: Icon(Icons.contacts), label: "Contacts"),
             const BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: "D/P/E"),
             const BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Reminders"),
-            const BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
+            const BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
           ],
         ),
       ),

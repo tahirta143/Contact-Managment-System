@@ -9,6 +9,7 @@ class Contact {
   final String? photoUrl;
   final String? profession;
   final String? speciality;
+  final String? company;
   final String? phone;
   final String? mobile;
   final String? whatsapp;
@@ -30,6 +31,7 @@ class Contact {
     this.photoUrl,
     this.profession,
     this.speciality,
+    this.company,
     this.phone,
     this.mobile,
     this.whatsapp,
@@ -68,6 +70,7 @@ class Contact {
       photoUrl: json['photoUrl'],
       profession: json['profession'],
       speciality: json['speciality'],
+      company: json['company'],
       phone: json['phone'],
       mobile: json['mobile'],
       whatsapp: json['whatsapp'],
@@ -95,6 +98,7 @@ class Contact {
       'photoUrl': photoUrl,
       'profession': profession,
       'speciality': speciality,
+      'company': company,
       'phone': phone,
       'mobile': mobile,
       'whatsapp': whatsapp,

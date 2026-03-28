@@ -6,7 +6,7 @@ class Reminder {
   final String? contactId;
   final String? status;
   final bool isCompleted;
-  final DateTime createdAt;
+  final DateTime? createdAt;
 
   Reminder({
     required this.id,
