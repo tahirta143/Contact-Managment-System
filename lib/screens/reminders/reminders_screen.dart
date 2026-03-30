@@ -7,6 +7,7 @@ import '../../providers/reminders_provider.dart';
 import '../../models/reminder_model.dart';
 import 'add_reminder_screen.dart';
 import '../../core/widgets/custom_loader.dart';
+import '../../core/utils/date_helper.dart';
 
 // Same event colors as DatesHomeScreen & HomeScreen
 const Color kBirthdayColor    = Color(0xFFFF6B9D);
@@ -69,8 +70,7 @@ class RemindersScreen extends ConsumerWidget {
                 }
                 return Column(
                   children: events.map((e) {
-                    final eventDate = DateTime.tryParse(e['date'] ?? "");
-                    final days = eventDate != null ? eventDate.difference(DateTime.now()).inDays + 1 : 0;
+                    final int days = e['daysUntil'] ?? 0;
                     return _buildReminderCard(
                       name: e['contactName'] ?? "Unknown",
                       type: e['type'] ?? "Event",
@@ -110,7 +110,7 @@ class RemindersScreen extends ConsumerWidget {
               Column(
                 children: remindersState.reminders.map((r) {
                   final date = DateTime.tryParse(r.reminderDate);
-                  final days = date != null ? date.difference(DateTime.now()).inDays + 1 : 0;
+                  final int days = date != null ? DateHelper.daysUntilNextOccurrence(date) : 0;
                   return _buildDynamicReminderCard(
                     context: context,
                     ref: ref,

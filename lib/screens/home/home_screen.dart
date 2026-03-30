@@ -12,6 +12,7 @@ import '../../providers/contacts_provider.dart';
 import '../../providers/events_provider.dart';
 import '../../providers/reminders_provider.dart';
 import '../dates/dates_home_screen.dart';
+import '../../core/utils/date_helper.dart';
 import '../../core/widgets/custom_loader.dart';
 
 // ─── Themed colors for icons (independent of AppBar/primary color) ───────────
@@ -662,7 +663,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       itemBuilder: (context, index) {
         final item = items[index];
         final eventDate = item['date'] != null ? DateTime.parse(item['date']) : null;
-        final difference = eventDate != null ? eventDate.difference(DateTime.now()).inDays : 0;
+        final int difference = item['daysUntil'] ?? 0;
         final formattedDate = eventDate != null ? DateFormat('d MMMM').format(eventDate) : "";
 
         return Padding(
@@ -717,7 +718,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     borderRadius: BorderRadius.circular(sw * 0.03),
                   ),
                   child: Text(
-                    "in $difference days",
+                    DateHelper.countdownText(difference),
                     style: TextStyle(
                       color: item['type'] == 'Birthday' ? kBirthdayColor : kAnniversaryColor,
                       fontSize: sw * 0.027,
