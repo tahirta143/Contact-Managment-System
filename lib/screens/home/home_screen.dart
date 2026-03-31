@@ -23,71 +23,6 @@ const Color kEventsColor      = Color(0xFF34C759); // green
 const Color kUpcomingColor    = Color(0xFFAF52DE); // purple
 const Color kGroupsColor      = Color(0xFFFF6B6B); // coral-red
 
-// ─── Standalone AnimatedCountText widget ─────────────────────────────────────
-class AnimatedCountText extends StatefulWidget {
-  final int count;
-  final TextStyle style;
-  final Duration duration;
-
-  const AnimatedCountText({
-    super.key,
-    required this.count,
-    required this.style,
-    this.duration = const Duration(milliseconds: 1200),
-  });
-
-  @override
-  State<AnimatedCountText> createState() => _AnimatedCountTextState();
-}
-
-class _AnimatedCountTextState extends State<AnimatedCountText>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this, duration: widget.duration);
-    _animation = Tween<double>(begin: 0, end: widget.count.toDouble()).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _controller.forward();
-    });
-  }
-
-  @override
-  void didUpdateWidget(AnimatedCountText oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.count != widget.count) {
-      _animation = Tween<double>(
-        begin: _animation.value,
-        end: widget.count.toDouble(),
-      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-      _controller
-        ..reset()
-        ..forward();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (_, __) => Text(
-        _animation.value.toInt().toString(),
-        style: widget.style,
-      ),
-    );
-  }
-}
 
 // ─── HomeScreen ───────────────────────────────────────────────────────────────
 class HomeScreen extends ConsumerStatefulWidget {
@@ -444,8 +379,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Icon(icon, color: iconColor, size: sw * 0.05),
-              AnimatedCountText(
-                count: count,
+              Text(
+                count.toString(),
                 style: TextStyle(fontSize: sw * 0.045, fontWeight: FontWeight.bold, color: kTextPrimary),
               ),
             ],

@@ -81,30 +81,3 @@ class GradientAvatar extends StatelessWidget {
   }
 }
 
-class AnimatedCountText extends StatelessWidget {
-  final int count;
-  final TextStyle style;
-  final Duration duration;
-
-  const AnimatedCountText({
-    super.key,
-    required this.count,
-    required this.style,
-    this.duration = const Duration(milliseconds: 1500),
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0, end: count.toDouble()),
-      duration: duration,
-      curve: Curves.easeOutExpo,
-      builder: (context, value, child) {
-        return Text(
-          value.toInt().toString().padLeft(2, '0'),
-          style: style,
-        );
-      },
-    );
-  }
-}
