@@ -34,7 +34,7 @@ class ContactDetailScreen extends ConsumerWidget {
 
     if (contact == null) {
       return Scaffold(
-        backgroundColor: kScaffoldBg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           title: const Text("Not Found"),
           leading: IconButton(
@@ -72,7 +72,7 @@ class ContactDetailScreen extends ConsumerWidget {
     final sliverHeight  = sh * 0.35;
 
     return Scaffold(
-      backgroundColor: kScaffoldBg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           _buildSliverAppBar(context, contact, sw, sh, avatarRadius, sliverHeight),
@@ -329,7 +329,7 @@ class ContactDetailScreen extends ConsumerWidget {
     return Container(
       padding: EdgeInsets.all(sw * 0.04),
       decoration: BoxDecoration(
-        color: kInputBg,
+        color: Theme.of(context).inputDecorationTheme.fillColor ?? const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(sw * 0.04),
       ),
       child: Row(

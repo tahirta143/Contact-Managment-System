@@ -67,7 +67,7 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
     }
 
     return Scaffold(
-      backgroundColor: kScaffoldBg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         onRefresh: () async {
           await ref.read(authProvider.notifier).tryAutoLogin();
@@ -121,7 +121,7 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
                     ),
                     child: CircleAvatar(
                       radius: sh * 0.08,
-                      backgroundColor: kInputBg,
+                      backgroundColor: Theme.of(context).inputDecorationTheme.fillColor ?? const Color(0xFFF3F4F6),
                       backgroundImage: user.photoUrl != null
                           ? CachedNetworkImageProvider(
                               user.photoUrl!.startsWith('http')
@@ -245,9 +245,11 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: kCardBg,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: kInputBg),
+        border: Border.all(
+          color: Theme.of(context).inputDecorationTheme.fillColor ?? const Color(0xFFF3F4F6),
+        ),
       ),
       child: Row(
         children: [

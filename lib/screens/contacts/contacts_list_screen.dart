@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/utils/common_widgets.dart';
+import '../../core/utils/date_helper.dart';
 import '../../models/contact_model.dart';
 import '../../providers/auth_provider.dart';
 import 'add_contact_screen.dart';
@@ -70,7 +71,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
 
 
     return Scaffold(
-      backgroundColor: kScaffoldBg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(isAdmin, sw),
       body: Column(
         children: [
@@ -223,7 +224,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: sw * 0.02, vertical: sw * 0.01),
       decoration: BoxDecoration(
-        color: kInputBg,
+        color: Theme.of(context).inputDecorationTheme.fillColor ?? const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(sw * 0.02),
       ),
       child: DropdownButtonHideUnderline(
@@ -411,6 +412,33 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
                   "${contact.designation ?? ''}${contact.designation != null && contact.city != null ? ' · ' : ''}${contact.city ?? ''}",
                   style: TextStyle(color: kTextSecondary, fontSize: subFontSize),
                 ),
+                // if (contact.upcomingEvent != null)
+                //   Padding(
+                //     padding: EdgeInsets.only(top: sw * 0.012),
+                //     child: Container(
+                //       padding: EdgeInsets.symmetric(horizontal: sw * 0.02, vertical: sw * 0.005),
+                //       decoration: BoxDecoration(
+                //         color: kPrimaryColor.withOpacity(0.1),
+                //         borderRadius: BorderRadius.circular(sw * 0.01),
+                //         border: Border.all(color: kPrimaryColor.withOpacity(0.2)),
+                //       ),
+                //       child: Row(
+                //         mainAxisSize: MainAxisSize.min,
+                //         children: [
+                //           Icon(Icons.event_note, size: sw * 0.03, color: kPrimaryColor),
+                //           SizedBox(width: sw * 0.01),
+                //           Text(
+                //             "${contact.upcomingEvent!['name']}: ${DateHelper.countdownText(contact.upcomingEvent!['days'])}",
+                //             style: TextStyle(
+                //               color: kPrimaryColor,
+                //               fontSize: sw * 0.026,
+                //               fontWeight: FontWeight.bold,
+                //             ),
+                //           ),
+                //         ],
+                //       ),
+                //     ),
+                //   ),
               ],
             ),
           ),
@@ -445,7 +473,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).dialogBackgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(sw * 0.04)),
         title: Text(
           "Delete Contact",
@@ -517,7 +545,7 @@ class _GroupContactsScreenState extends ConsumerState<GroupContactsScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).dialogBackgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(sw * 0.04)),
         title: Text("Delete Contact", style: TextStyle(color: kTextPrimary, fontSize: sw * 0.045)),
         content: Text("Are you sure you want to delete this contact?", style: TextStyle(color: kTextSecondary, fontSize: sw * 0.035)),
@@ -562,7 +590,7 @@ class _GroupContactsScreenState extends ConsumerState<GroupContactsScreen> {
     final itemSpacing = MediaQuery.of(context).size.height * 0.014;
 
     return Scaffold(
-      backgroundColor: kScaffoldBg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back, size: sw * 0.06),

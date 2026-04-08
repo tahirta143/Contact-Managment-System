@@ -185,7 +185,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
     final avatarRadius = sw * 0.15;
 
     return Scaffold(
-      backgroundColor: kScaffoldBg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back, size: sw * 0.06),

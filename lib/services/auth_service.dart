@@ -94,4 +94,23 @@ class AuthService {
     final token = await getToken();
     return token != null;
   }
+
+  Future<void> updateFcmToken(String fcmToken) async {
+    try {
+      final token = await getToken();
+      if (token == null) return;
+
+      await http.post(
+        Uri.parse("${ApiConstants.baseUrl}/auth/fcm-token"),
+        body: jsonEncode({"fcmToken": fcmToken}),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+    } catch (e) {
+      // Slient failure for FCM token sync
+      print("Error updating FCM token: $e");
+    }
+  }
 }

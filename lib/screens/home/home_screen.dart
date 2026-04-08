@@ -101,7 +101,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(sw),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: bottomNavHeight + fabMargin),
@@ -154,7 +154,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: sw * 0.04, vertical: sh * 0.016),
                     decoration: BoxDecoration(
-                      color: kInputBg,
+                      color: Theme.of(context).inputDecorationTheme.fillColor ?? const Color(0xFFF3F4F6),
                       borderRadius: BorderRadius.circular(sw * 0.05),
                     ),
                     child: Row(
@@ -165,13 +165,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         Text(
                           isToday ? "Today, " + DateFormat('dd MMM yyyy').format(_selectedHomeDate) : DateFormat('dd MMMM yyyy').format(_selectedHomeDate),
                           style: TextStyle(
-                            color: kTextPrimary,
+                            color: Theme.of(context).textTheme.bodyLarge?.color ?? kTextPrimary,
                             fontWeight: FontWeight.bold,
                             fontSize: sw * 0.04,
                           ),
                         ),
                         SizedBox(width: sw * 0.02),
-                        Icon(Icons.arrow_drop_down, color: kTextSecondary, size: sw * 0.055),
+                        Icon(Icons.arrow_drop_down, color: Theme.of(context).textTheme.bodyMedium?.color ?? kTextSecondary, size: sw * 0.055),
                       ],
                     ),
                   ),

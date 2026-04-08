@@ -67,7 +67,7 @@ class _AddReminderScreenState extends ConsumerState<AddReminderScreen> {
     final contacts = ref.watch(contactsProvider).contacts;
 
     return Scaffold(
-      backgroundColor: kScaffoldBg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text("Add Reminder"),
         actions: [

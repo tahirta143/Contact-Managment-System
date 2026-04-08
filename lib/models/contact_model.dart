@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+
 import '../core/utils/date_helper.dart';
 import 'contact_event_model.dart';
 
@@ -52,8 +54,60 @@ class Contact {
   int? get daysUntilBirthday => birthday != null ? DateHelper.daysUntilNextOccurrence(birthday!) : null;
   int? get daysUntilAnniversary => anniversary != null ? DateHelper.daysUntilNextOccurrence(anniversary!) : null;
 
+  Map<String, dynamic>? get upcomingEvent {
+    List<Map<String, dynamic>> allEvents = [];
+    
+    if (birthday != null) {
+      allEvents.add({
+        'name': 'Birthday',
+        'days': daysUntilBirthday,
+        'date': birthday,
+      });
+    }
+    
+    if (anniversary != null) {
+      allEvents.add({
+        'name': 'Anniversary',
+        'days': daysUntilAnniversary,
+        'date': anniversary,
+      });
+    }
+    
+    for (var e in events) {
+      // For custom events, use the label if type is 'Other'
+      String displayName = e.type;
+      if (e.type == 'Other' && e.label != null && e.label!.isNotEmpty) {
+        displayName = e.label!;
+      }
+      
+      allEvents.add({
+        'name': displayName,
+        'days': DateHelper.daysUntilNextOccurrence(e.date),
+        'date': e.date,
+      });
+    }
+
+    if (allEvents.isEmpty) return null;
+
+    // Sort by days until occurrence
+    allEvents.sort((a, b) => (a['days'] as int).compareTo(b['days'] as int));
+
+    return allEvents.first;
+  }
+
   factory Contact.fromJson(Map<String, dynamic> json) {
-    // Parse groups - backend returns a List (already parsed in mapContactRow)
+    // Helper to safely parse dates
+    DateTime? parseDate(dynamic value) {
+      if (value == null || value.toString().isEmpty) return null;
+      try {
+        return DateTime.parse(value.toString());
+      } catch (e) {
+        debugPrint("Error parsing date: $value, error: $e");
+        return null;
+      }
+    }
+
+    // Parse groups - handle both List and comma-separated String
     final rawGroups = json['groups'];
     List<String> parsedGroups = [];
     if (rawGroups is List) {
@@ -63,29 +117,29 @@ class Contact {
     }
 
     return Contact(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      designation: json['designation'],
-      reference: json['reference'],
-      photoUrl: json['photoUrl'],
-      profession: json['profession'],
-      speciality: json['speciality'],
-      company: json['company'],
-      phone: json['phone'],
-      mobile: json['mobile'],
-      whatsapp: json['whatsapp'],
-      address: json['address'],
-      permanentAddress: json['permanentAddress'],
-      city: json['city'],
-      birthday: json['birthday'] != null ? DateTime.parse(json['birthday']) : null,
-      anniversary: json['anniversary'] != null ? DateTime.parse(json['anniversary']) : null,
-      reminderDaysBefore: json['reminderDaysBefore'],
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? 'Unnamed Contact',
+      designation: json['designation']?.toString(),
+      reference: json['reference']?.toString(),
+      photoUrl: json['photoUrl']?.toString(),
+      profession: json['profession']?.toString(),
+      speciality: json['speciality']?.toString(),
+      company: json['company']?.toString(),
+      phone: json['phone']?.toString(),
+      mobile: json['mobile']?.toString(),
+      whatsapp: json['whatsapp']?.toString(),
+      address: json['address']?.toString(),
+      permanentAddress: json['permanentAddress']?.toString(),
+      city: json['city']?.toString(),
+      birthday: parseDate(json['birthday']),
+      anniversary: parseDate(json['anniversary']),
+      reminderDaysBefore: json['reminderDaysBefore'] is int ? json['reminderDaysBefore'] : null,
       events: (json['events'] as List<dynamic>?)
               ?.map((e) => ContactEvent.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
       groups: parsedGroups,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+      createdAt: parseDate(json['createdAt']) ?? DateTime.now(),
     );
   }
 

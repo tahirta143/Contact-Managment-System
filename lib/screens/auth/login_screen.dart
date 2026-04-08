@@ -62,7 +62,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final top = MediaQuery.of(context).padding.top;
 
     return Scaffold(
-      backgroundColor: kScaffoldBg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(

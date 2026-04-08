@@ -26,7 +26,7 @@ class RemindersScreen extends ConsumerWidget {
     final hPad   = sw * 0.045;
 
     return Scaffold(
-      backgroundColor: kScaffoldBg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context, sw),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(

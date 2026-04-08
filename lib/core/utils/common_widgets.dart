@@ -21,16 +21,25 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final defaultCardColor = isDark
+        ? const Color(0xFF1A1D27)   // dark card bg
+        : Colors.white;             // light card bg
+
+    final shadowColor = isDark
+        ? Colors.black.withOpacity(0.25)
+        : Colors.black.withOpacity(0.05);
+
     return Container(
       width: width,
       height: height,
       padding: padding,
       decoration: BoxDecoration(
-        color: color ?? Colors.white,
+        color: color ?? defaultCardColor,
         borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -80,4 +89,3 @@ class GradientAvatar extends StatelessWidget {
     );
   }
 }
-

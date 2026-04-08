@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
-import '../../core/utils/common_widgets.dart';
+import '../../providers/theme_provider.dart';
 import '../../providers/contacts_provider.dart';
 import '../../providers/events_provider.dart';
 import '../../providers/reminders_provider.dart';
@@ -72,7 +72,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       extendBody: true,
-      backgroundColor: kScaffoldBg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: _buildDrawer(isAdmin),
       body: IndexedStack(
         index: _selectedIndex,
@@ -85,9 +85,11 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   Widget _buildDrawer(bool isAdmin) {
     final sw = MediaQuery.of(context).size.width;
     final sh = MediaQuery.of(context).size.height;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final drawerBg = isDark ? const Color(0xFF1A1D27) : Colors.white;
 
     return Drawer(
-      backgroundColor: Colors.white,
+      backgroundColor: drawerBg,
       width: sw * 0.78,                          // responsive drawer width
       child: Column(
         children: [
@@ -105,25 +107,32 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                   _buildDrawerItem(Icons.notifications,   "Reminders",       3, sw, sh),
 
                   Divider(
-                    color: kTextTertiary.withOpacity(0.1),
+                    color: Theme.of(context).dividerColor,
                     indent: sw * 0.05,
                     endIndent: sw * 0.05,
                     height: sh * 0.025,
                   ),
 
                   // ── Settings nav ──────────────────────────────────
-                  // _buildDrawerItem(Icons.settings,        "Settings",        5, sw, sh),
                   _buildDrawerItem(Icons.person,          "Profile",         4, sw, sh),
                   _buildDrawerItem(Icons.lock_reset,      "Change Password", 6, sw, sh),
-                  // if (isAdmin)
-                  //   _buildDrawerItem(Icons.manage_accounts, "User Management", 7, sw, sh),
+
+                  Divider(
+                    color: Theme.of(context).dividerColor,
+                    indent: sw * 0.05,
+                    endIndent: sw * 0.05,
+                    height: sh * 0.025,
+                  ),
+
+                  // ── Dark Mode Toggle ───────────────────────────────
+                  _buildThemeToggle(sw, sh),
                 ],
               ),
             ),
           ),
 
           Divider(
-            color: kTextTertiary.withOpacity(0.1),
+            color: Theme.of(context).dividerColor,
             indent: sw * 0.05,
             endIndent: sw * 0.05,
           ),
@@ -201,6 +210,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       double   sh,
       ) {
     final isSelected = _selectedIndex == index;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? const Color(0xFFF1F5F9) : kTextSecondary;
 
     return InkWell(
       onTap: () {
@@ -218,7 +229,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? kPrimaryColor.withOpacity(0.08)
+              ? kPrimaryColor.withOpacity(0.12)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(sw * 0.03),
         ),
@@ -230,13 +241,15 @@ class _MainScreenState extends ConsumerState<MainScreen> {
               height: sw * 0.1,
               decoration: BoxDecoration(
                 color: isSelected
-                    ? kPrimaryColor.withOpacity(0.12)
-                    : kTextTertiary.withOpacity(0.08),
+                    ? kPrimaryColor.withOpacity(0.15)
+                    : (isDark
+                        ? Colors.white.withOpacity(0.06)
+                        : kTextTertiary.withOpacity(0.08)),
                 borderRadius: BorderRadius.circular(sw * 0.025),
               ),
               child: Icon(
                 icon,
-                color: isSelected ? kPrimaryColor : kTextSecondary,
+                color: isSelected ? kPrimaryColor : textColor,
                 size: sw * 0.052,
               ),
             ),
@@ -244,13 +257,72 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             Text(
               title,
               style: TextStyle(
-                color: isSelected ? kPrimaryColor : kTextSecondary,
+                color: isSelected ? kPrimaryColor : textColor,
                 fontSize: sw * 0.038,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+// ── Dark mode toggle tile ─────────────────────────────────────────────────────
+  Widget _buildThemeToggle(double sw, double sh) {
+    final isDark = ref.watch(themeProvider) == ThemeMode.dark;
+    final textColor = Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFFF1F5F9)
+        : kTextSecondary;
+
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: sw * 0.06,
+        vertical: sh * 0.003,
+      ),
+      child: Row(
+        children: [
+          // Icon box
+          Container(
+            width:  sw * 0.1,
+            height: sw * 0.1,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? kPrimaryColor.withOpacity(0.15)
+                  : kTextTertiary.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(sw * 0.025),
+            ),
+            child: Icon(
+              isDark ? Icons.dark_mode : Icons.light_mode,
+              color: isDark ? kPrimaryColor : kTextSecondary,
+              size: sw * 0.052,
+            ),
+          ),
+          SizedBox(width: sw * 0.035),
+          Expanded(
+            child: Text(
+              isDark ? "Dark Mode" : "Light Mode",
+              style: TextStyle(
+                color: textColor,
+                fontSize: sw * 0.038,
+              ),
+            ),
+          ),
+          // ── Toggle switch ──
+          Transform.scale(
+            scale: 0.85,
+            child: Switch(
+              value: isDark,
+              onChanged: (_) {
+                ref.read(themeProvider.notifier).toggleTheme();
+              },
+              activeColor: kPrimaryColor,
+              activeTrackColor: kPrimaryColor.withOpacity(0.3),
+              inactiveThumbColor: kTextTertiary,
+              inactiveTrackColor: kTextTertiary.withOpacity(0.2),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -306,25 +378,38 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       ),
     );
   }
+
   Widget _buildBottomNav(bool isAdmin, int currentIndex) {
     final size = MediaQuery.of(context).size;
     final bottomMargin = size.height * 0.035;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Dark mode: dark card bg with subtle border + cyan selected items
+    // Light mode: original cyan pill with white items
+    final navBg   = isDark ? const Color(0xFF13161F) : kPrimaryColor;
+    final selColor = isDark ? kPrimaryColor : Colors.white;
+    final unselColor = isDark ? const Color(0xFF5C657A) : Colors.white54;
 
     return Container(
       margin: EdgeInsets.fromLTRB(16, 0, 16, bottomMargin),
       decoration: BoxDecoration(
-        color: kPrimaryColor,
+        color: navBg,
         borderRadius: BorderRadius.circular(20),
+        border: isDark
+            ? Border.all(color: const Color(0xFF1E2236), width: 1)
+            : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
+            color: isDark
+                ? Colors.black.withOpacity(0.5)
+                : Colors.black.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(20),
         child: BottomNavigationBar(
           currentIndex: currentIndex,
           showSelectedLabels: true,
@@ -332,15 +417,16 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.white54,
+          selectedItemColor: selColor,
+          unselectedItemColor: unselColor,
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
           onTap: _onTabTapped,
-          items: [
-            const BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: "Home"),
-            const BottomNavigationBarItem(icon: Icon(Icons.contacts), label: "Contacts"),
-            const BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: "D/P/E"),
-            const BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Reminders"),
-            const BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: "Home"),
+            BottomNavigationBarItem(icon: Icon(Icons.contacts), label: "Contacts"),
+            BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: "D/P/E"),
+            BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Reminders"),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
           ],
         ),
       ),
