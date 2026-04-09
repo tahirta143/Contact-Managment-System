@@ -14,6 +14,8 @@ import 'contact_detail_screen.dart';
 import 'edit_contact_screen.dart';
 import '../../providers/contacts_provider.dart';
 import '../../core/widgets/custom_loader.dart';
+import '../../providers/navigation_provider.dart';
+import '../../providers/events_provider.dart';
 
 // - [x] Redesign `lib/screens/contacts/contacts_list_screen.dart` with `AppCard` and shadows
 // - [/] Clean up `lib/screens/main_screen.dart` drawer theme usage
@@ -27,7 +29,6 @@ class ContactsListScreen extends ConsumerStatefulWidget {
 
 class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
   final _searchController = TextEditingController();
-  String _activeTab = 'All';
   final List<String> _filters = ['All', 'By Group'];
 
   String _selectedCityFilter = 'All';
@@ -181,11 +182,12 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
               itemCount: _filters.length,
               itemBuilder: (context, index) {
                 final filter = _filters[index];
-                final isSelected = _activeTab == filter;
+                final activeTab = ref.watch(contactsActiveTabProvider);
+                final isSelected = activeTab == filter;
                 return Padding(
                   padding: EdgeInsets.only(right: sw * 0.03),
                   child: GestureDetector(
-                    onTap: () => setState(() => _activeTab = filter),
+                    onTap: () => ref.read(contactsActiveTabProvider.notifier).state = filter,
                     child: Chip(
                       label: Text(
                         filter,
@@ -273,7 +275,8 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
       return const Center(child: Text("No contacts match the selected filters"));
     }
 
-    if (_activeTab == 'By Group') {
+    final activeTab = ref.watch(contactsActiveTabProvider);
+    if (activeTab == 'By Group') {
       final Map<String, List<Contact>> grouped = {};
       for (final contact in displayContacts) {
         if (contact.groups.isEmpty) {
@@ -487,6 +490,9 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("Contact deleted"), backgroundColor: Colors.green),
                   );
+                  // Invalidate caches to remove associated events
+                  ref.invalidate(upcomingEventsProvider(10));
+                  ref.invalidate(upcomingEventsProvider(400));
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(error), backgroundColor: Colors.red),
@@ -557,6 +563,9 @@ class _GroupContactsScreenState extends ConsumerState<GroupContactsScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Contact deleted"), backgroundColor: Colors.red),
                 );
+                // Invalidate caches to remove associated events
+                ref.invalidate(upcomingEventsProvider(10));
+                ref.invalidate(upcomingEventsProvider(400));
               }
             },
             child: Text("Delete", style: TextStyle(color: Colors.white, fontSize: sw * 0.035)),

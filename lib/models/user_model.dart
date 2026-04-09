@@ -15,14 +15,14 @@ class AppUser {
     required this.isActive,
   });
 
-  bool get isAdmin => role == 'admin';
+  bool get isAdmin => true; // Everyone has admin visibility now
 
   factory AppUser.fromJson(Map<String, dynamic> json) {
     return AppUser(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
       email: json['email'] ?? '',
-      role: json['role'] ?? 'user',
+      role: json['role'] ?? 'admin',
       photoUrl: json['photoUrl'],
       isActive: json['isActive'] ?? true,
     );

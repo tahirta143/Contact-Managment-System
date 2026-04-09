@@ -17,6 +17,7 @@ import '../dates/dates_home_screen.dart';
 import '../../core/utils/date_helper.dart';
 import '../../core/widgets/custom_loader.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/navigation_provider.dart';
 
 // ─── Themed colors for icons (independent of AppBar/primary color) ───────────
 const Color kBirthdayColor    = Color(0xFFFF6B9D); // pink
@@ -68,7 +69,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final double scrollBottomPad = bottomNavHeight + 80 + fabMargin;
 
     final contactsState = ref.watch(contactsProvider);
-    final upcomingEvents = ref.watch(upcomingEventsProvider(30));
+    final upcomingEvents = ref.watch(upcomingEventsProvider(10));
     final remindersState = ref.watch(remindersProvider);
 
     // Filter events based on _selectedHomeDate
@@ -177,7 +178,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         onRefresh: () async {
           ref.read(contactsProvider.notifier).loadContacts();
           ref.read(remindersProvider.notifier).loadReminders();
-          ref.invalidate(upcomingEventsProvider(30));
+          ref.invalidate(upcomingEventsProvider(10));
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -209,7 +210,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     if (date != null) {
                       setState(() => _selectedHomeDate = date);
                       // Only invalidate upcomingEvents as contacts are already loaded
-                      ref.invalidate(upcomingEventsProvider(30));
+                      ref.invalidate(upcomingEventsProvider(10));
                     }
                   },
                   child: Container(
@@ -376,7 +377,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      user?.isAdmin == true ? "Administrator" : "User",
+                      "User",
                       style: TextStyle(
                         fontSize: sw * 0.026,
                         color: accent,
@@ -432,18 +433,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       childAspectRatio: 2.0,
       padding: EdgeInsets.symmetric(horizontal: hPad),
       children: [
-        _buildCountCard("Total Contacts", contactsCount, Icons.people_outline,      kContactsColor, sw, sh).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1, end: 0),
-        _buildCountCard("Today's Events", todayEventsCount,   Icons.event_available,     kEventsColor,   sw, sh).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
-        _buildCountCard("Upcoming",       upcomingCount,  Icons.upcoming,            kUpcomingColor, sw, sh).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1, end: 0),
-        _buildCountCard("Groups",         groupsCount,    Icons.group_work_outlined, kGroupsColor,   sw, sh).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0),
+        _buildCountCard("Total Contacts", contactsCount, Icons.people_outline,      kContactsColor, sw, sh,
+          onTap: () {
+            ref.read(contactsActiveTabProvider.notifier).state = 'All';
+            ref.read(mainSelectedIndexProvider.notifier).state = 1;
+          }
+        ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1, end: 0),
+        _buildCountCard("Today's Events", todayEventsCount,   Icons.event_available,     kEventsColor,   sw, sh,
+          onTap: () => ref.read(mainSelectedIndexProvider.notifier).state = 2,
+        ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
+        _buildCountCard("Upcoming",       upcomingCount,  Icons.upcoming,            kUpcomingColor, sw, sh,
+          onTap: () => ref.read(mainSelectedIndexProvider.notifier).state = 3,
+        ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1, end: 0),
+        _buildCountCard("Groups",         groupsCount,    Icons.group_work_outlined, kGroupsColor,   sw, sh,
+          onTap: () {
+            ref.read(contactsActiveTabProvider.notifier).state = 'By Group';
+            ref.read(mainSelectedIndexProvider.notifier).state = 1;
+          }
+        ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0),
       ],
     );
   }
 
-  Widget _buildCountCard(String title, int count, IconData icon, Color iconColor, double sw, double sh) {
+  Widget _buildCountCard(String title, int count, IconData icon, Color iconColor, double sw, double sh, {VoidCallback? onTap}) {
     final theme = Theme.of(context);
     
     return AppCard(
+      onTap: onTap,
       padding: EdgeInsets.symmetric(horizontal: sw * 0.04, vertical: sh * 0.004),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

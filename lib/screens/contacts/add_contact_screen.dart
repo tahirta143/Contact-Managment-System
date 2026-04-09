@@ -7,6 +7,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/utils/common_widgets.dart';
 import '../../providers/contacts_provider.dart';
 import '../../models/contact_event_model.dart';
+import '../../providers/events_provider.dart';
 
 const Color kBirthdayColor    = Color(0xFFFF6B9D);
 const Color kAnniversaryColor = Color(0xFFFF9500);
@@ -175,6 +176,9 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
               backgroundColor: Colors.green,
             ),
           );
+          // Invalidate caches to show new events
+          ref.invalidate(upcomingEventsProvider(10));
+          ref.invalidate(upcomingEventsProvider(400));
         }
       } else {
         if (mounted) {

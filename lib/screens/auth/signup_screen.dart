@@ -21,7 +21,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _passwordController        = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _formKey                   = GlobalKey<FormState>();
-  String _selectedRole             = 'User';
+  String _selectedRole             = 'Admin';
   bool _showPassword               = false;
   bool _showConfirm                = false;
 
@@ -216,25 +216,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             v != _passwordController.text ? "Passwords do not match" : null,
           ),
           SizedBox(height: sh * 0.024),
-
-          // Role selector
-          Text(
-            "SELECT ROLE",
-            style: TextStyle(
-              color: Theme.of(context).textTheme.bodyMedium?.color,
-              fontSize: sw * 0.028,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
-          ),
-          SizedBox(height: sh * 0.01),
-          Row(
-            children: [
-              _buildRoleBtn("Admin", sw, sh),
-              SizedBox(width: sw * 0.03),
-              _buildRoleBtn("User",  sw, sh),
-            ],
-          ),
           SizedBox(height: sh * 0.028),
 
           SizedBox(
@@ -277,34 +258,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // ── Role toggle button ─────────────────────────────────────────────────────
-  Widget _buildRoleBtn(String role, double sw, double sh) {
-    final isSelected = _selectedRole == role;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedRole = role),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          height: sh * 0.055,
-          decoration: BoxDecoration(
-            color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).cardTheme.color,
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: Center(
-              child: Text(
-                role,
-                style: TextStyle(
-                  color: isSelected ? (Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white) : Theme.of(context).textTheme.bodyMedium?.color,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  fontSize: sw * 0.036,
-                ),
-              ),
-          ),
-        ),
       ),
     );
   }

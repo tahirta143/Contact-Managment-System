@@ -15,6 +15,7 @@ import 'settings/settings_screen.dart';
 import 'settings/admin_profile_screen.dart';
 import 'settings/change_password_screen.dart';
 import 'settings/user_management_screen.dart';
+import '../../providers/navigation_provider.dart';
 
 
 
@@ -26,7 +27,6 @@ class MainScreen extends ConsumerStatefulWidget {
 }
 
 class _MainScreenState extends ConsumerState<MainScreen> {
-  int _selectedIndex = 0;
 
   final List<Widget> _pages = [
     const HomeScreen(),
@@ -40,8 +40,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   ];
 
   void _onTabTapped(int index) {
-    if (_selectedIndex != index) {
-      setState(() => _selectedIndex = index);
+    if (ref.read(mainSelectedIndexProvider) != index) {
+      ref.read(mainSelectedIndexProvider.notifier).state = index;
     }
     
     // Auto-refresh data for the selected screen
@@ -49,15 +49,16 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       case 0:
         ref.read(contactsProvider.notifier).loadContacts();
         ref.read(remindersProvider.notifier).loadReminders();
-        ref.invalidate(upcomingEventsProvider(30));
+        ref.invalidate(upcomingEventsProvider(10));
         break;
       case 1:
       case 2:
         ref.read(contactsProvider.notifier).loadContacts();
+        ref.read(datesSelectedDateProvider.notifier).state = DateTime.now();
         break;
       case 3:
         ref.read(remindersProvider.notifier).loadReminders();
-        ref.invalidate(upcomingEventsProvider(30));
+        ref.invalidate(upcomingEventsProvider(10));
         break;
     }
   }
@@ -65,8 +66,9 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final isAdmin = ref.watch(authProvider).user?.isAdmin ?? false;
+    final selectedIndex = ref.watch(mainSelectedIndexProvider);
     // Map indices 5, 6, 7 (sub-settings) to index 4 (Settings tab) for the bottom nav
-    int bottomNavIndex = _selectedIndex;
+    int bottomNavIndex = selectedIndex;
     if (bottomNavIndex > 4) bottomNavIndex = 4;
 
     return Scaffold(
@@ -75,7 +77,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: _buildDrawer(isAdmin),
       body: IndexedStack(
-        index: _selectedIndex,
+        index: selectedIndex,
         children: _pages,
       ),
       bottomNavigationBar: _buildBottomNav(isAdmin, bottomNavIndex),
@@ -212,7 +214,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       double   sh,
       ) {
     final theme = Theme.of(context);
-    final isSelected = _selectedIndex == index;
+    final isSelected = ref.watch(mainSelectedIndexProvider) == index;
     final textColor = theme.textTheme.titleLarge?.color;
     final accent = theme.primaryColor;
 

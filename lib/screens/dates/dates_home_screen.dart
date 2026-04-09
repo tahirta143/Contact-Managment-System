@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/common_widgets.dart';
 import '../../providers/contacts_provider.dart';
+import '../../providers/events_provider.dart';
 import '../../core/widgets/custom_loader.dart';
 import '../../models/contact_model.dart';
 
@@ -11,6 +13,8 @@ import '../../models/contact_model.dart';
 const Color kBirthdayColor    = Color(0xFFFF6B9D); // pink
 const Color kAnniversaryColor = Color(0xFFFF9500); // amber/gold
 const Color kCustomEventColor = Color(0xFF4C9EFF); // blue
+
+final datesSelectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
 
 class DatesHomeScreen extends ConsumerStatefulWidget {
   const DatesHomeScreen({super.key});
@@ -22,9 +26,6 @@ class DatesHomeScreen extends ConsumerStatefulWidget {
 class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
   // 0: By Date, 1: By Person, 2: By Event
   int _selectedFilterType = 0;
-
-  // Date-wise state
-  DateTime _selectedDate = DateTime.now();
 
   // Event-wise state
   String _selectedEventType = 'All';
@@ -41,6 +42,8 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
 
     final contactsState = ref.watch(contactsProvider);
     final contacts = contactsState.contacts;
+    final upcomingEvents = ref.watch(upcomingEventsProvider(400));
+    final selectedDate = ref.watch(datesSelectedDateProvider);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -55,7 +58,7 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
                 ? const Center(child: CustomLoader(message: "Loading..."))
                 : contactsState.error != null
                     ? Center(child: Text(contactsState.error!))
-                    : _buildBodyForFilter(contacts, hPad, sw, sh),
+                    : _buildBodyForFilter(contacts, upcomingEvents.value ?? [], selectedDate, hPad, sw, sh),
           ),
         ],
       ),
@@ -161,11 +164,11 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
     );
   }
 
-  Widget _buildBodyForFilter(List<Contact> contacts, double hPad, double sw, double sh) {
+  Widget _buildBodyForFilter(List<Contact> contacts, List<Map<String, dynamic>> apiEvents, DateTime selectedDate, double hPad, double sw, double sh) {
     switch (_selectedFilterType) {
-      case 0: return _buildDateWiseView(contacts, hPad, sw, sh);
-      case 1: return _buildPersonWiseView(contacts, hPad, sw, sh);
-      case 2: return _buildEventWiseView(contacts, hPad, sw, sh);
+      case 0: return _buildDateWiseView(contacts, apiEvents, selectedDate, hPad, sw, sh);
+      case 1: return _buildPersonWiseView(contacts, apiEvents, hPad, sw, sh);
+      case 2: return _buildEventWiseView(contacts, apiEvents, hPad, sw, sh);
       default: return const SizedBox();
     }
   }
@@ -173,12 +176,13 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
   // ══════════════════════════════════════════════════════════════════════════
   // DATE-WISE VIEW
   // ══════════════════════════════════════════════════════════════════════════
-  Widget _buildDateWiseView(List<Contact> contacts, double hPad, double sw, double sh) {
-    final selMonth = _selectedDate.month;
-    final selDay   = _selectedDate.day;
+  Widget _buildDateWiseView(List<Contact> contacts, List<Map<String, dynamic>> apiEvents, DateTime selectedDate, double hPad, double sw, double sh) {
+    final selMonth = selectedDate.month;
+    final selDay   = selectedDate.day;
 
     List<Map<String, dynamic>> flatEvents = [];
 
+    // 1. Logic for contacts (Birthdays/Anniversaries)
     for (var c in contacts) {
       if (c.birthday != null && c.birthday!.month == selMonth && c.birthday!.day == selDay) {
         flatEvents.add({
@@ -198,11 +202,43 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
           'color': kAnniversaryColor,
         });
       }
+      // Note: Legacy loop for c.events is kept but might be empty due to backend limitation
       for (var e in c.events) {
         if (e.date.month == selMonth && e.date.day == selDay) {
           flatEvents.add({
             'name': c.name,
-            'type': e.type,
+            'type': (e.type == 'Other' || e.type == 'Custom')
+                ? (e.label != null && e.label!.isNotEmpty ? e.label! : "Event")
+                : e.type,
+            'subtitle': "Custom Event",
+            'icon': Icons.event,
+            'color': kCustomEventColor,
+          });
+        }
+      }
+    }
+
+    // 2. Logic for API events (Merging custom events from events API)
+    for (var e in apiEvents) {
+      final dateStr = e['date'] as String?;
+      if (dateStr == null) continue;
+      final date = DateTime.tryParse(dateStr);
+      if (date == null) continue;
+
+      if (date.month == selMonth && date.day == selDay) {
+        final type = e['type'] as String? ?? 'Event';
+        if (type == 'Birthday' || type == 'Anniversary') continue; // Already handled above from contacts
+
+        final label = e['label'] as String?;
+        final name = e['contactName'] as String? ?? "Contact";
+
+        // Avoid duplication if already added from c.events (using name + type + date)
+        if (!flatEvents.any((item) => item['name'] == name && item['type'] == (label ?? type))) {
+          flatEvents.add({
+            'name': name,
+            'type': (type == 'Other' || type == 'Custom' || type == 'Event')
+                ? (label != null && label.isNotEmpty ? label : "Event")
+                : type,
             'subtitle': "Custom Event",
             'icon': Icons.event,
             'color': kCustomEventColor,
@@ -220,7 +256,7 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
             onTap: () async {
               final date = await showDatePicker(
                 context: context,
-                initialDate: _selectedDate,
+                initialDate: selectedDate,
                 firstDate: DateTime(2000),
                 lastDate: DateTime(2100),
                 builder: (ctx, child) => Theme(
@@ -230,7 +266,7 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
                   child: child!,
                 ),
               );
-              if (date != null) setState(() => _selectedDate = date);
+              if (date != null) ref.read(datesSelectedDateProvider.notifier).state = date;
             },
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: sw * 0.04, vertical: sh * 0.016),
@@ -244,7 +280,7 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
                   Icon(Icons.calendar_month, color: Theme.of(context).primaryColor, size: sw * 0.05),
                   SizedBox(width: sw * 0.02),
                   Text(
-                    DateFormat('dd MMMM yyyy').format(_selectedDate),
+                    DateFormat('dd MMMM yyyy').format(selectedDate),
                     style: TextStyle(
                       color: Theme.of(context).textTheme.titleLarge?.color,
                       fontWeight: FontWeight.bold,
@@ -264,6 +300,7 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
           child: RefreshIndicator(
             onRefresh: () async {
               await ref.read(contactsProvider.notifier).loadContacts();
+              ref.invalidate(upcomingEventsProvider(400));
             },
             color: Theme.of(context).primaryColor,
             child: flatEvents.isEmpty
@@ -292,7 +329,7 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
   // ══════════════════════════════════════════════════════════════════════════
   // PERSON-WISE VIEW
   // ══════════════════════════════════════════════════════════════════════════
-  Widget _buildPersonWiseView(List<Contact> contacts, double hPad, double sw, double sh) {
+  Widget _buildPersonWiseView(List<Contact> contacts, List<Map<String, dynamic>> apiEvents, double hPad, double sw, double sh) {
     final filtered = contacts.where((c) {
       if (c.birthday == null && c.anniversary == null && c.events.isEmpty) return false;
       if (_searchQuery.isEmpty) return true;
@@ -328,6 +365,7 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
           child: RefreshIndicator(
             onRefresh: () async {
               await ref.read(contactsProvider.notifier).loadContacts();
+              ref.invalidate(upcomingEventsProvider(400));
             },
             color: Theme.of(context).primaryColor,
             child: filtered.isEmpty
@@ -337,7 +375,8 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
               itemCount: filtered.length,
               itemBuilder: (context, index) {
                 final c = filtered[index];
-                return _buildPersonBlock(c, sw, sh);
+                final contactApiEvents = apiEvents.where((e) => e['contactId'] == c.id).toList();
+                return _buildPersonBlock(c, contactApiEvents, sw, sh);
               },
             ),
           ),
@@ -346,7 +385,7 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
     );
   }
 
-  Widget _buildPersonBlock(Contact c, double sw, double sh) {
+  Widget _buildPersonBlock(Contact c, List<Map<String, dynamic>> contactApiEvents, double sw, double sh) {
     final bdayStr = c.birthday != null ? DateFormat('dd MMM').format(c.birthday!) : null;
     final anniStr = c.anniversary != null ? DateFormat('dd MMM').format(c.anniversary!) : null;
 
@@ -380,6 +419,24 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
                 ...c.events.map((e) {
                   final evStr = DateFormat('dd MMM yyyy').format(e.date);
                   return _buildSmallDetailChip(Icons.event, "${e.type}: $evStr", kCustomEventColor, sw);
+                }).toList(),
+                ...contactApiEvents.where((e) {
+                  final type = e['type'];
+                  return type != 'Birthday' && type != 'Anniversary';
+                }).map((e) {
+                  final date = DateTime.tryParse(e['date'] ?? "");
+                  final evStr = date != null ? DateFormat('dd MMM yyyy').format(date) : "Event";
+                  final label = e['label'] as String?;
+                  final displayType = (e['type'] == 'Other' || e['type'] == 'Custom' || e['type'] == 'Event')
+                      ? (label ?? "Event")
+                      : e['type'];
+                  
+                  // Avoid duplication with c.events if possible (simplified name check)
+                  if (c.events.any((ce) => ce.type == displayType || ce.label == displayType)) {
+                    return const SizedBox.shrink();
+                  }
+
+                  return _buildSmallDetailChip(Icons.event, "$displayType: $evStr", kCustomEventColor, sw);
                 }).toList(),
               ],
             ),
@@ -416,7 +473,7 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
   // ══════════════════════════════════════════════════════════════════════════
   // EVENT-WISE VIEW
   // ══════════════════════════════════════════════════════════════════════════
-  Widget _buildEventWiseView(List<Contact> contacts, double hPad, double sw, double sh) {
+  Widget _buildEventWiseView(List<Contact> contacts, List<Map<String, dynamic>> apiEvents, double hPad, double sw, double sh) {
     final isAll = _selectedEventType == 'All';
     final isBirthday = _selectedEventType == 'Birthday' || isAll;
     final isAnniversary = _selectedEventType == 'Anniversary' || isAll;
@@ -450,11 +507,43 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
         for (var e in c.events) {
           flatEvents.add({
             'name': c.name,
-            'dateStr': DateFormat('dd MMM yyyy').format(e.date),
-            'subtitle': e.type, // e.g. "Work", "Custom"
+            'dateStr': (e.type == 'Other' || e.type == 'Custom')
+                ? (e.label != null && e.label!.isNotEmpty ? e.label! : "Event")
+                : e.type,
+            'subtitle': DateFormat('dd MMM yyyy').format(e.date),
             'icon': Icons.event,
             'color': kCustomEventColor,
-            'sortDate': DateTime(e.date.year, e.date.month, e.date.day),
+            'sortDate': DateTime(0, e.date.month, e.date.day),
+          });
+        }
+      }
+    }
+
+    // 2. Logic for API events (Merging custom events from events API)
+    if (isCustom) {
+      for (var e in apiEvents) {
+        final type = e['type'] as String? ?? 'Event';
+        if (type == 'Birthday' || type == 'Anniversary') continue;
+
+        final dateStr = e['date'] as String?;
+        if (dateStr == null) continue;
+        final date = DateTime.tryParse(dateStr);
+        if (date == null) continue;
+
+        final label = e['label'] as String?;
+        final name = e['contactName'] as String? ?? "Contact";
+
+        // Avoid duplication (using name + dateStr + full subtitle/year to be unique)
+        if (!flatEvents.any((item) => item['name'] == name && item['dateStr'] == (label ?? type) && item['subtitle'] == DateFormat('dd MMM yyyy').format(date))) {
+           flatEvents.add({
+            'name': name,
+            'dateStr': (type == 'Other' || type == 'Custom' || type == 'Event')
+                ? (label != null && label.isNotEmpty ? label : "Event")
+                : type,
+            'subtitle': DateFormat('dd MMM yyyy').format(date),
+            'icon': Icons.event,
+            'color': kCustomEventColor,
+            'sortDate': DateTime(0, date.month, date.day),
           });
         }
       }
@@ -489,6 +578,7 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
           child: RefreshIndicator(
             onRefresh: () async {
               await ref.read(contactsProvider.notifier).loadContacts();
+              ref.invalidate(upcomingEventsProvider(400));
             },
             color: Theme.of(context).primaryColor,
             child: flatEvents.isEmpty

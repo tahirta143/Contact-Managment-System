@@ -150,7 +150,7 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
               ),
             ),
             Text(
-              user.role.toUpperCase(),
+              "USER",
               style: TextStyle(
                 fontSize: sw * 0.035,
                 fontWeight: FontWeight.w600,
@@ -185,7 +185,7 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
                     context,
                     icon: Icons.security_outlined,
                     title: "User Role",
-                    value: user.isAdmin ? "Administrator" : "Standard User",
+                    value: "Verified User",
                     index: 2,
                   ),
                 ],
