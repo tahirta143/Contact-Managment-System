@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_colors.dart';
 
 class AppCard extends StatelessWidget {
@@ -6,8 +7,13 @@ class AppCard extends StatelessWidget {
   final double? width;
   final double? height;
   final EdgeInsetsGeometry? padding;
-  final double borderRadius;
+  final EdgeInsetsGeometry? margin;
+  final double? borderRadius;
   final Color? color;
+  final List<BoxShadow>? boxShadow;
+  final BoxBorder? border;
+  final VoidCallback? onTap;
+  final Duration? delay;
 
   const AppCard({
     super.key,
@@ -15,38 +21,50 @@ class AppCard extends StatelessWidget {
     this.width,
     this.height,
     this.padding,
-    this.borderRadius = 16,
+    this.margin,
+    this.borderRadius,
     this.color,
+    this.boxShadow,
+    this.border,
+    this.onTap,
+    this.delay,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final defaultCardColor = isDark
-        ? const Color(0xFF1A1D27)   // dark card bg
-        : Colors.white;             // light card bg
-
-    final shadowColor = isDark
-        ? Colors.black.withOpacity(0.25)
-        : Colors.black.withOpacity(0.05);
-
+    final theme = Theme.of(context);
+    final cardTheme = theme.cardTheme;
+    
     return Container(
       width: width,
       height: height,
-      padding: padding,
+      margin: margin,
       decoration: BoxDecoration(
-        color: color ?? defaultCardColor,
-        borderRadius: BorderRadius.circular(borderRadius),
-        boxShadow: [
+        color: color ?? Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(borderRadius ?? 30.0),
+        boxShadow: boxShadow ?? [
           BoxShadow(
-            color: shadowColor,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.4 : 0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
+        border: border,
       ),
-      child: child,
-    );
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(borderRadius ?? 30.0),
+          child: Padding(
+            padding: padding ?? const EdgeInsets.all(16.0),
+            child: child,
+          ),
+        ),
+      ),
+    ).animate(delay: delay ?? 0.ms)
+     .fadeIn(duration: 400.ms, curve: Curves.easeOut)
+     .slideX(begin: 0.05, end: 0, duration: 400.ms, curve: Curves.easeOut);
   }
 }
 
@@ -72,20 +90,23 @@ class GradientAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).primaryColor;
     return CircleAvatar(
       radius: radius,
-      backgroundColor: backgroundColor ?? kPrimaryColor.withOpacity(0.1),
+      backgroundColor: backgroundColor ?? primaryColor.withOpacity(0.12),
       backgroundImage: imageUrl != null ? NetworkImage(imageUrl!) : null,
       child: imageUrl == null && initials != null
           ? Text(
               initials!,
               style: TextStyle(
-                color: textColor ?? kPrimaryColor,
+                color: textColor ?? primaryColor,
                 fontSize: radius * 0.8,
                 fontWeight: FontWeight.bold,
               ),
             )
           : null,
-    );
+    ).animate()
+     .fadeIn(duration: 500.ms)
+     .scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1), curve: Curves.easeOutBack);
   }
 }

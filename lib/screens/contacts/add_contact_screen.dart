@@ -276,7 +276,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
               right: 0,
               child: Container(
                 padding: EdgeInsets.all(sw * 0.022),
-                decoration: const BoxDecoration(color: kPrimaryColor, shape: BoxShape.circle),
+                decoration: BoxDecoration(color: Theme.of(context).primaryColor, shape: BoxShape.circle),
                 child: Icon(Icons.camera_alt_outlined, color: Colors.white, size: sw * 0.048),
               ),
             ),
@@ -294,14 +294,14 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
       padding: EdgeInsets.only(bottom: sh * 0.018),
       child: Row(
         children: [
-          Container(width: sw * 0.008, height: sh * 0.022, color: kPrimaryColor),
+          Container(width: sw * 0.008, height: sh * 0.022, color: Theme.of(context).primaryColor),
           SizedBox(width: sw * 0.025),
           Text(
             title,
-            style: TextStyle(color: kTextPrimary, fontSize: sw * 0.038, fontWeight: FontWeight.bold),
+            style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontSize: sw * 0.038, fontWeight: FontWeight.bold),
           ),
           SizedBox(width: sw * 0.025),
-          Expanded(child: Divider(color: kTextTertiary.withOpacity(0.1))),
+          Expanded(child: Divider(color: Theme.of(context).dividerColor.withOpacity(0.1))),
           if (trailing != null) ...[
             SizedBox(width: sw * 0.02),
             trailing,
@@ -321,12 +321,17 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
         controller: controller,
         maxLines: maxLines,
         keyboardType: keyboard,
-        style: TextStyle(color: kTextPrimary, fontWeight: FontWeight.w600, fontSize: sw * 0.036),
+        style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontWeight: FontWeight.w600, fontSize: sw * 0.036),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: TextStyle(fontSize: sw * 0.034),
           prefixIcon: Icon(icon, size: sw * 0.052),
           contentPadding: EdgeInsets.symmetric(vertical: sh * 0.018, horizontal: sw * 0.04),
+          filled: true,
+          fillColor: Theme.of(context).cardTheme.color,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
         ),
         validator: required ? (v) => (v == null || v.isEmpty) ? "$hint is required" : null : null,
       ),
@@ -351,17 +356,17 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
         },
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: sw * 0.04, vertical: sh * 0.018),
-          decoration: BoxDecoration(color: kInputBg, borderRadius: BorderRadius.circular(sw * 0.075)),
+          decoration: BoxDecoration(color: Theme.of(context).cardTheme.color, borderRadius: BorderRadius.circular(30)),
           child: Row(
             children: [
               Icon(icon, color: accent, size: sw * 0.055),
               SizedBox(width: sw * 0.03),
               Text(
                 value != null ? DateFormat('d MMMM yyyy').format(value) : "Select $label",
-                style: TextStyle(color: value != null ? kTextPrimary : kTextSecondary, fontWeight: FontWeight.w600, fontSize: sw * 0.036),
+                style: TextStyle(color: value != null ? Theme.of(context).textTheme.titleLarge?.color : Theme.of(context).textTheme.bodyMedium?.color, fontWeight: FontWeight.w600, fontSize: sw * 0.036),
               ),
               const Spacer(),
-              Icon(Icons.calendar_today_outlined, color: kTextTertiary, size: sw * 0.045),
+              Icon(Icons.calendar_today_outlined, color: Theme.of(context).textTheme.labelSmall?.color, size: sw * 0.045),
             ],
           ),
         ),
@@ -385,20 +390,20 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
         Container(
           padding: EdgeInsets.symmetric(horizontal: sw * 0.04, vertical: sh * 0.012),
           decoration: BoxDecoration(
-            color: kInputBg,
-            borderRadius: BorderRadius.circular(sw * 0.075),
+            color: Theme.of(context).cardTheme.color,
+            borderRadius: BorderRadius.circular(30),
           ),
           child: Row(
             children: [
-              Icon(Icons.group_outlined, color: kTextSecondary, size: sw * 0.052),
+              Icon(Icons.group_outlined, color: Theme.of(context).textTheme.bodyMedium?.color, size: sw * 0.052),
               SizedBox(width: sw * 0.03),
               Expanded(
                 child: TextField(
                   controller: _groupController,
-                  style: TextStyle(color: kTextPrimary, fontSize: sw * 0.036),
+                  style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: sw * 0.036),
                   decoration: InputDecoration(
                     hintText: "Type group name and press Enter",
-                    hintStyle: TextStyle(fontSize: sw * 0.033, color: kTextSecondary),
+                    hintStyle: TextStyle(fontSize: sw * 0.033, color: Theme.of(context).textTheme.bodyMedium?.color),
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
@@ -415,7 +420,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
               ),
               if (availableGroups.isNotEmpty)
                 PopupMenuButton<String>(
-                  icon: Icon(Icons.arrow_drop_down, color: kTextSecondary, size: sw * 0.06),
+                  icon: Icon(Icons.arrow_drop_down, color: Theme.of(context).textTheme.bodyMedium?.color, size: sw * 0.06),
                   tooltip: "Select from previous groups",
                   onSelected: (val) {
                     setState(() => _selectedGroups.add(val));
@@ -432,7 +437,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
                   }
                   _groupController.clear();
                 },
-                child: Icon(Icons.add_circle, color: kPrimaryColor, size: sw * 0.06),
+                child: Icon(Icons.add_circle, color: Theme.of(context).primaryColor, size: sw * 0.06),
               ),
             ],
           ),
@@ -453,10 +458,11 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
             children: _selectedGroups.map((group) {
               return Chip(
                 label: Text(group, style: TextStyle(color: Colors.white, fontSize: sw * 0.032)),
-                backgroundColor: kPrimaryColor,
+                backgroundColor: Theme.of(context).primaryColor,
                 deleteIconColor: Colors.white70,
                 onDeleted: () => setState(() => _selectedGroups.remove(group)),
                 padding: EdgeInsets.symmetric(horizontal: sw * 0.01),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               );
             }).toList(),
           ),
@@ -480,14 +486,9 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
         ),
         ...List.generate(_customEvents.length, (index) {
           final event = _customEvents[index];
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
+          return AppCard(
+            borderRadius: 15,
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: kInputBg,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: kTextTertiary.withOpacity(0.1)),
-            ),
             child: Column(
               children: [
                 Row(
@@ -540,9 +541,9 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
                   },
                   child: Row(
                     children: [
-                      const Icon(Icons.event, size: 20, color: kPrimaryColor),
+                      Icon(Icons.event, size: 20, color: Theme.of(context).primaryColor),
                       const SizedBox(width: 8),
-                      Text(DateFormat('d MMM yyyy').format(event.date)),
+                      Text(DateFormat('d MMM yyyy').format(event.date), style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color)),
                     ],
                   ),
                 ),
@@ -554,11 +555,13 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
                     isDense: true,
                   ),
                   onChanged: (val) {
-                    _customEvents[index] = ContactEvent(
-                      type: event.type,
-                      date: event.date,
-                      label: val,
-                    );
+                    setState(() {
+                      _customEvents[index] = ContactEvent(
+                        type: event.type,
+                        date: event.date,
+                        label: val,
+                      );
+                    });
                   },
                 ),
               ],
@@ -572,9 +575,9 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
   Widget _buildReminderSection(BuildContext context, double sw) {
     return Row(
       children: [
-        Icon(Icons.notifications_active_outlined, color: kTextSecondary, size: sw * 0.05),
+        Icon(Icons.notifications_active_outlined, color: Theme.of(context).textTheme.bodyMedium?.color, size: sw * 0.05),
         SizedBox(width: sw * 0.03),
-        Text("Remind me", style: TextStyle(color: kTextPrimary, fontSize: sw * 0.036)),
+        Text("Remind me", style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: sw * 0.036)),
         const Spacer(),
         DropdownButton<int>(
           value: _reminderDays,
@@ -586,7 +589,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
               value: val,
               child: Text(
                 val == 0 ? "Same day" : "$val day(s) before",
-                style: TextStyle(color: kTextSecondary, fontSize: sw * 0.033),
+                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.033),
               ),
             );
           }).toList(),
@@ -604,6 +607,8 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
       child: ElevatedButton(
         onPressed: isLoading ? null : _handleSave,
         style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).primaryColor,
+          foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(sw * 0.075)),
         ),
         child: isLoading

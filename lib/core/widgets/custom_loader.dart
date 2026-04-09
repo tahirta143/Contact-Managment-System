@@ -30,8 +30,8 @@ class CustomLoader extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    kPrimaryColor.withOpacity(0.2),
-                    kPrimaryColor.withOpacity(0.0),
+                    Theme.of(context).primaryColor.withOpacity(0.2),
+                    Theme.of(context).primaryColor.withOpacity(0.0),
                   ],
                 ),
               ),
@@ -40,8 +40,8 @@ class CustomLoader extends StatelessWidget {
               .fade(begin: 0.5, end: 1.0, duration: 1.5.seconds),
 
             // 2. Double animated gradient rings
-            _buildRotatingRing(64, 3, 1500.ms, false),
-            _buildRotatingRing(46, 2.5, 2000.ms, true),
+            _buildRotatingRing(context, 64, 3, 1500.ms, false),
+            _buildRotatingRing(context, 46, 2.5, 2000.ms, true),
 
             // 3. Center gradient logo/icon
             Container(
@@ -49,14 +49,14 @@ class CustomLoader extends StatelessWidget {
               height: 32,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [kPrimaryColor, kPrimaryColor.withOpacity(0.7)],
+                  colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.7)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: kPrimaryColor.withOpacity(0.4),
+                    color: Theme.of(context).primaryColor.withOpacity(0.4),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   )
@@ -72,8 +72,8 @@ class CustomLoader extends StatelessWidget {
           Text(
             message!,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: kTextPrimary,
+            style: TextStyle(
+              color: Theme.of(context).textTheme.titleLarge?.color,
               fontSize: 16,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.5,
@@ -105,7 +105,7 @@ class CustomLoader extends StatelessWidget {
             Positioned.fill(
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                child: Container(color: Colors.white.withOpacity(0.2)),
+                child: Container(color: (Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white).withOpacity(0.2)),
               ),
             ),
             Center(
@@ -116,7 +116,7 @@ class CustomLoader extends StatelessWidget {
                   borderRadius: BorderRadius.circular(28),
                   boxShadow: [
                     BoxShadow(
-                      color: kPrimaryColor.withOpacity(0.1),
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
                       blurRadius: 30,
                       offset: const Offset(0, 10),
                     ),
@@ -134,16 +134,16 @@ class CustomLoader extends StatelessWidget {
     return Center(child: loaderVisuals);
   }
 
-  Widget _buildRotatingRing(double size, double strokeWidth, Duration duration, bool reverse) {
+  Widget _buildRotatingRing(BuildContext context, double size, double strokeWidth, Duration duration, bool reverse) {
     return SizedBox(
       width: size,
       height: size,
       child: ShaderMask(
         shaderCallback: (bounds) => SweepGradient(
           colors: [
-            kPrimaryColor.withOpacity(0.0),
-            kPrimaryColor,
-            kPrimaryColor.withOpacity(0.0),
+            Theme.of(context).primaryColor.withOpacity(0.0),
+            Theme.of(context).primaryColor,
+            Theme.of(context).primaryColor.withOpacity(0.0),
           ],
           stops: const [0.0, 0.5, 1.0],
           transform: const GradientRotation(3.14 / 4),

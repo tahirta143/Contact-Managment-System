@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/utils/common_widgets.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/widgets/custom_loader.dart';
 
@@ -72,7 +74,7 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
         onRefresh: () async {
           await ref.read(authProvider.notifier).tryAutoLogin();
         },
-        color: kPrimaryColor,
+        color: Theme.of(context).primaryColor,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
@@ -85,15 +87,13 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
                 Container(
                   height: sh * 0.25,
                   width: double.infinity,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [kPrimaryColor, kPrimaryLight],
-                    ),
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(40),
-                      bottomRight: Radius.circular(40),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.dark 
+                        ? Theme.of(context).cardTheme.color 
+                        : Theme.of(context).primaryColor,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(50),
+                      bottomRight: Radius.circular(50),
                     ),
                   ),
                 ),
@@ -130,7 +130,7 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
                             )
                           : null,
                       child: user.photoUrl == null
-                          ? Icon(Icons.person, size: sh * 0.08, color: kTextTertiary)
+                          ? Icon(Icons.person, size: sh * 0.08, color: Theme.of(context).textTheme.bodyMedium?.color)
                           : null,
                     ),
                   ),
@@ -146,7 +146,7 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
               style: TextStyle(
                 fontSize: sw * 0.065,
                 fontWeight: FontWeight.bold,
-                color: kTextPrimary,
+                color: Theme.of(context).textTheme.titleLarge?.color,
               ),
             ),
             Text(
@@ -154,7 +154,7 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
               style: TextStyle(
                 fontSize: sw * 0.035,
                 fontWeight: FontWeight.w600,
-                color: kPrimaryColor,
+                color: Theme.of(context).primaryColor,
                 letterSpacing: 1.2,
               ),
             ),
@@ -171,19 +171,22 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
                     icon: Icons.email_outlined,
                     title: "Email Address",
                     value: user.email,
+                    index: 0,
                   ),
                   _buildInfoCard(
                     context,
                     icon: Icons.verified_user_outlined,
                     title: "Account Status",
                     value: user.isActive ? "Active" : "Inactive",
-                    valueColor: user.isActive ? kSuccess : kError,
+                    valueColor: user.isActive ? Colors.green : Colors.red,
+                    index: 1,
                   ),
                   _buildInfoCard(
                     context,
                     icon: Icons.security_outlined,
                     title: "User Role",
                     value: user.isAdmin ? "Administrator" : "Standard User",
+                    index: 2,
                   ),
                 ],
               ),
@@ -206,9 +209,9 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
                     label: const Text("Edit Profile"),
                     style: ElevatedButton.styleFrom(
                       minimumSize: Size(double.infinity, sh * 0.06),
-                      backgroundColor: kPrimaryColor,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     ),
                   ),
                   SizedBox(height: sh * 0.015),
@@ -218,9 +221,9 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
                     label: const Text("Logout"),
                     style: OutlinedButton.styleFrom(
                       minimumSize: Size(double.infinity, sh * 0.06),
-                      foregroundColor: kError,
-                      side: const BorderSide(color: kError),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     ),
                   ),
                 ],
@@ -238,50 +241,47 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
     required IconData icon,
     required String title,
     required String value,
+    required int index,
     Color? valueColor,
   }) {
     final sw = MediaQuery.of(context).size.width;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: Theme.of(context).inputDecorationTheme.fillColor ?? const Color(0xFFF3F4F6),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: kPrimaryColor.withOpacity(0.1),
-              shape: BoxShape.circle,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: AppCard(
+        padding: const EdgeInsets.all(16),
+        delay: (100 * index).ms,
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: Theme.of(context).primaryColor, size: sw * 0.055),
             ),
-            child: Icon(icon, color: kPrimaryColor, size: sw * 0.055),
-          ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(color: kTextSecondary, fontSize: sw * 0.03),
-                ),
-                Text(
-                  value,
-                  style: TextStyle(
-                    color: valueColor ?? kTextPrimary,
-                    fontSize: sw * 0.038,
-                    fontWeight: FontWeight.bold,
+            const SizedBox(width: 15),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.03),
                   ),
-                ),
-              ],
+                  Text(
+                    value,
+                    style: TextStyle(
+                      color: valueColor ?? Theme.of(context).textTheme.titleLarge?.color,
+                      fontSize: sw * 0.038,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

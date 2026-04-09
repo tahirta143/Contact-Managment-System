@@ -115,16 +115,16 @@ class _AddReminderScreenState extends ConsumerState<AddReminderScreen> {
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: sw * 0.04, vertical: sh * 0.018),
                   decoration: BoxDecoration(
-                    color: kInputBg,
-                    borderRadius: BorderRadius.circular(sw * 0.075),
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(30),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.calendar_today, color: kPrimaryColor),
+                      Icon(Icons.calendar_today, color: Theme.of(context).primaryColor),
                       SizedBox(width: sw * 0.03),
                       Text(
                         _reminderDate != null ? DateFormat('yyyy-MM-dd').format(_reminderDate!) : "Select Date*",
-                        style: TextStyle(color: _reminderDate != null ? kTextPrimary : kTextSecondary),
+                        style: TextStyle(color: _reminderDate != null ? Theme.of(context).textTheme.bodyLarge?.color : Theme.of(context).textTheme.bodyMedium?.color),
                       ),
                     ],
                   ),
@@ -150,6 +150,11 @@ class _AddReminderScreenState extends ConsumerState<AddReminderScreen> {
                 height: sh * 0.06,
                 child: ElevatedButton(
                   onPressed: _handleSave,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).primaryColor,
+                    foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  ),
                   child: const Text("CREATE REMINDER"),
                 ),
               ),

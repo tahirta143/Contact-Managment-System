@@ -74,10 +74,11 @@ class Contact {
     }
     
     for (var e in events) {
-      // For custom events, use the label if type is 'Other'
-      String displayName = e.type;
-      if (e.type == 'Other' && e.label != null && e.label!.isNotEmpty) {
-        displayName = e.label!;
+      String displayName;
+      if (e.type == 'Other' || e.type == 'Custom') {
+        displayName = (e.label != null && e.label!.isNotEmpty) ? e.label! : "Custom Event";
+      } else {
+        displayName = e.type + (e.label != null && e.label!.isNotEmpty ? ' (${e.label})' : '');
       }
       
       allEvents.add({

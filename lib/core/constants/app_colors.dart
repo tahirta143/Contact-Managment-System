@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
 
 // PRIMARY COLOR (Solid)
-const Color kPrimaryColor = Color(0xFF03AED2); // The new bright cyan
-const Color kPrimaryLight = Color(0xFF4AC2E0); 
-const Color kPrimaryDark = Color(0xFF028AA8);
+const Color kPrimaryColor = Color(0xFF03AED2); // Existing cyan
+const Color kPrimaryTeal  = Color(0xFF79D7D4); // New Mint/Teal for dark mode accents
+const Color kPrimaryLight = Color(0xFF68D3E8); 
+const Color kPrimaryDark = Color(0xFF027B96);
+
+// DEEP DARK PALETTE
+const Color kDeepBlack    = Color(0xFF000000);
+const Color kDarkCard     = Color(0xFF12141C);
+const Color kDarkCardElev = Color(0xFF1C1F26);
+const Color kDarkInput    = Color(0xFF1C1F26);
+const Color kDarkDivider  = Color(0xFF232833);
+const Color kDarkTextPri  = Color(0xFFFFFFFF);
+const Color kDarkTextSec  = Color(0xFFA0A0A0);
 
 // BACKGROUNDS
-const Color kScaffoldBg = Color(0xFFFFFFFF);
-const Color kCardBg = Color(0xFFF9FAFB);
-const Color kInputBg = Color(0xFFF3F4F6);
+const Color kScaffoldBg = Color(0xFFF4F6F9); // Light grey-blue for better card contrast
+const Color kCardBg      = Color(0xFFFFFFFF); // Pure white cards
+const Color kInputBg     = Color(0xFFFFFFFF); // White inputs with border
 
 // TEXT COLORS
 const Color kTextPrimary = Color(0xFF111827); // Very dark gray
@@ -33,3 +43,6 @@ const Color kPurpleDark = kPrimaryDark;
 const Color kTextWhiteSoft = kTextSecondary;
 const Color kTextHint = kTextTertiary;
 const Color kAccentPink = kAccentColor;
+
+// - [x] Update `kScaffoldBg` in `lib/core/constants/app_colors.dart`
+// - [x] Refine `lightTheme` colors and shadows in `lib/core/theme/app_theme.dart`

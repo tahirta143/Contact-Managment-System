@@ -72,11 +72,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.chevron_left_rounded,
-                color: kPrimaryColor, size: sw * 0.06),
+                color: Theme.of(context).primaryColor, size: sw * 0.06),
             Text(
               "Back to login",
               style: TextStyle(
-                color: kPrimaryColor,
+                color: Theme.of(context).primaryColor,
                 fontSize: sw * 0.034,
                 fontWeight: FontWeight.w600,
               ),
@@ -99,14 +99,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           decoration: BoxDecoration(
             color: isSuccess
                 ? const Color(0xFF1D9E75).withOpacity(0.1)
-                : kPrimaryColor.withOpacity(0.1),
+                : Theme.of(context).primaryColor.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(
             isSuccess
                 ? Icons.check_circle_outline_rounded
                 : Icons.lock_reset_rounded,
-            color: isSuccess ? const Color(0xFF1D9E75) : kPrimaryColor,
+            color: isSuccess ? const Color(0xFF1D9E75) : Theme.of(context).primaryColor,
             size: sw * 0.1,
           ),
         ),
@@ -114,7 +114,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         Text(
           isSuccess ? "Link Sent!" : "Forgot Password?",
           style: TextStyle(
-            color: kTextPrimary,
+            color: Theme.of(context).textTheme.titleLarge?.color,
             fontSize: sw * 0.062,
             fontWeight: FontWeight.bold,
             letterSpacing: 0.1,
@@ -127,7 +127,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               : "Enter your email and we'll send\na reset link right away.",
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: kTextSecondary,
+            color: Theme.of(context).textTheme.bodyMedium?.color,
             fontSize: sw * 0.033,
             height: 1.55,
           ),
@@ -149,7 +149,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             Text(
               "EMAIL ADDRESS",
               style: TextStyle(
-                color: kTextSecondary,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
                 fontSize: sw * 0.028,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
@@ -160,37 +160,37 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               controller:   _emailController,
               keyboardType: TextInputType.emailAddress,
               style: TextStyle(
-                color: kTextPrimary,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
                 fontSize: sw * 0.038,
                 fontWeight: FontWeight.w600,
               ),
               decoration: InputDecoration(
                 hintText:   "Enter your email",
                 filled:     true,
-                fillColor:  kInputBg,
+                fillColor:  Theme.of(context).cardTheme.color,
                 prefixIcon: Icon(
                   Icons.email_outlined,
-                  color: kPrimaryColor,
+                  color: Theme.of(context).primaryColor,
                   size: sw * 0.052,
                 ),
                 contentPadding:
                 EdgeInsets.symmetric(vertical: sh * 0.018),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(sw * 0.032),
+                  borderRadius: BorderRadius.circular(30),
                   borderSide: BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(sw * 0.032),
+                  borderRadius: BorderRadius.circular(30),
                   borderSide:
-                  BorderSide(color: kPrimaryColor, width: 1.5),
+                  BorderSide(color: Theme.of(context).primaryColor, width: 1.5),
                 ),
                 errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(sw * 0.032),
+                  borderRadius: BorderRadius.circular(30),
                   borderSide:
                   const BorderSide(color: Colors.red, width: 1),
                 ),
                 focusedErrorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(sw * 0.032),
+                  borderRadius: BorderRadius.circular(30),
                   borderSide:
                   const BorderSide(color: Colors.red, width: 1.5),
                 ),
@@ -207,10 +207,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               child: ElevatedButton(
                 onPressed: _handleReset,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: kPrimaryColor,
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius:
-                    BorderRadius.circular(sw * 0.035),
+                    BorderRadius.circular(30),
                   ),
                   elevation: 0,
                 ),
@@ -283,7 +284,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       children: [
         Text(
           "Remember your password?",
-          style: TextStyle(color: kTextSecondary, fontSize: sw * 0.034),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.034),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context),
@@ -295,7 +296,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           child: Text(
             "Sign In",
             style: TextStyle(
-              color: kPrimaryColor,
+              color: Theme.of(context).primaryColor,
               fontSize: sw * 0.034,
               fontWeight: FontWeight.bold,
             ),

@@ -50,12 +50,12 @@ class ContactDetailScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               const Text(
                 "Contact not found",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: kTextPrimary),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text("Go Back", style: TextStyle(color: kPrimaryColor)),
+                child: Text("Go Back", style: TextStyle(color: Theme.of(context).primaryColor)),
               ),
             ],
           ),
@@ -134,9 +134,9 @@ class ContactDetailScreen extends ConsumerWidget {
                       );
                     }),
                     if (contact.birthday == null && contact.anniversary == null && contact.events.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8),
-                        child: Text("No important dates recorded", style: TextStyle(color: kTextSecondary)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Text("No important dates recorded", style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color)),
                       ),
                   ],
                 ),
@@ -161,7 +161,7 @@ class ContactDetailScreen extends ConsumerWidget {
     return SliverAppBar(
       expandedHeight: sliverHeight,
       pinned: true,
-      backgroundColor: kPrimaryColor,
+      backgroundColor: Theme.of(context).primaryColor,
       elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
         background: Column(
@@ -238,12 +238,12 @@ class ContactDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(sectionIcon, color: kPrimaryColor, size: sw * 0.045),
+              Icon(sectionIcon, color: Theme.of(context).primaryColor, size: sw * 0.045),
               SizedBox(width: sw * 0.02),
               Text(
                 title.toUpperCase(),
                 style: TextStyle(
-                  color: kTextPrimary,
+                  color: Theme.of(context).textTheme.titleLarge?.color,
                   fontSize: sw * 0.028,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.2,
@@ -251,7 +251,7 @@ class ContactDetailScreen extends ConsumerWidget {
               ),
             ],
           ),
-          Divider(color: kTextTertiary.withOpacity(0.1), height: sh * 0.03),
+          Divider(color: Theme.of(context).dividerColor.withOpacity(0.1), height: sh * 0.03),
           ...children,
         ],
       ),
@@ -282,12 +282,12 @@ class ContactDetailScreen extends ConsumerWidget {
               children: [
                 Text(
                   label,
-                  style: TextStyle(color: kTextSecondary, fontSize: sw * 0.028),
+                  style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.028),
                 ),
                 Text(
                   value,
                   style: TextStyle(
-                    color: kTextPrimary,
+                    color: Theme.of(context).textTheme.titleLarge?.color,
                     fontSize: sw * 0.036,
                     fontWeight: FontWeight.w600,
                   ),
@@ -310,7 +310,7 @@ class ContactDetailScreen extends ConsumerWidget {
   // ── Call button ──────────────────────────────────────────────────────────
   Widget _buildCallButton(BuildContext context) {
     final sw = MediaQuery.of(context).size.width;
-    return Icon(Icons.phone_callback, color: kPrimaryColor, size: sw * 0.048);
+    return Icon(Icons.phone_callback, color: Theme.of(context).primaryColor, size: sw * 0.048);
   }
 
   // ── Date card ────────────────────────────────────────────────────────────
@@ -329,7 +329,7 @@ class ContactDetailScreen extends ConsumerWidget {
     return Container(
       padding: EdgeInsets.all(sw * 0.04),
       decoration: BoxDecoration(
-        color: Theme.of(context).inputDecorationTheme.fillColor ?? const Color(0xFFF3F4F6),
+        color: Theme.of(context).cardTheme.color?.withOpacity(0.5) ?? Theme.of(context).hoverColor,
         borderRadius: BorderRadius.circular(sw * 0.04),
       ),
       child: Row(
@@ -351,13 +351,13 @@ class ContactDetailScreen extends ConsumerWidget {
               children: [
                 Text(
                   title,
-                  style: TextStyle(color: kTextSecondary, fontSize: sw * 0.03),
+                  style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.03),
                 ),
                 SizedBox(height: sh * 0.004),
                 Text(
                   date,
                   style: TextStyle(
-                    color: kTextPrimary,
+                    color: Theme.of(context).textTheme.titleLarge?.color,
                     fontSize: sw * 0.038,
                     fontWeight: FontWeight.bold,
                   ),
@@ -387,9 +387,9 @@ class ContactDetailScreen extends ConsumerWidget {
                 ),
               ),
               SizedBox(height: sh * 0.005),
-              Text(
+               Text(
                 countdown,
-                style: TextStyle(color: kTextSecondary, fontSize: sw * 0.028),
+                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.028),
               ),
             ],
           ),

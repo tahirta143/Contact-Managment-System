@@ -112,9 +112,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         sw * 0.06, top + sh * 0.032, sw * 0.06, sh * 0.036,
       ),
       decoration: BoxDecoration(
-        color: kPrimaryColor,
+        color: Theme.of(context).primaryColor,
         borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(sw * 0.085),
+          bottom: Radius.circular(30),
         ),
       ),
       child: Column(
@@ -221,7 +221,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           Text(
             "SELECT ROLE",
             style: TextStyle(
-              color: kTextSecondary,
+              color: Theme.of(context).textTheme.bodyMedium?.color,
               fontSize: sw * 0.028,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,
@@ -246,9 +246,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 return ElevatedButton(
                   onPressed: authState.isLoading ? null : _handleSignup,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: kPrimaryColor,
+                    backgroundColor: Theme.of(context).primaryColor,
+                    foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(sw * 0.035),
+                      borderRadius: BorderRadius.circular(30),
                     ),
                     elevation: 0,
                   ),
@@ -290,18 +291,18 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           duration: const Duration(milliseconds: 200),
           height: sh * 0.055,
           decoration: BoxDecoration(
-            color: isSelected ? kPrimaryColor : kInputBg,
-            borderRadius: BorderRadius.circular(sw * 0.06),
+            color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).cardTheme.color,
+            borderRadius: BorderRadius.circular(30),
           ),
           child: Center(
-            child: Text(
-              role,
-              style: TextStyle(
-                color: isSelected ? Colors.white : kTextSecondary,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                fontSize: sw * 0.036,
+              child: Text(
+                role,
+                style: TextStyle(
+                  color: isSelected ? (Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white) : Theme.of(context).textTheme.bodyMedium?.color,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontSize: sw * 0.036,
+                ),
               ),
-            ),
           ),
         ),
       ),
@@ -327,7 +328,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         Text(
           label,
           style: TextStyle(
-            color: kTextSecondary,
+            color: Theme.of(context).textTheme.bodyMedium?.color,
             fontSize: sw * 0.028,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
@@ -339,31 +340,31 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           obscureText:  obscureText,
           keyboardType: keyboardType,
           style: TextStyle(
-            color: kTextPrimary,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
             fontSize: sw * 0.038,
             fontWeight: FontWeight.w600,
           ),
           decoration: InputDecoration(
             hintText:    hint,
             filled:      true,
-            fillColor:   kInputBg,
-            prefixIcon:  Icon(icon, color: kPrimaryColor, size: sw * 0.052),
+            fillColor:   Theme.of(context).cardTheme.color,
+            prefixIcon:  Icon(icon, color: Theme.of(context).primaryColor, size: sw * 0.052),
             suffixIcon:  suffixIcon,
             contentPadding: EdgeInsets.symmetric(vertical: sh * 0.018),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(sw * 0.032),
+              borderRadius: BorderRadius.circular(30),
               borderSide: BorderSide.none,
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(sw * 0.032),
-              borderSide: BorderSide(color: kPrimaryColor, width: 1.5),
+              borderRadius: BorderRadius.circular(30),
+              borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 1.5),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(sw * 0.032),
+              borderRadius: BorderRadius.circular(30),
               borderSide: const BorderSide(color: Colors.red, width: 1),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(sw * 0.032),
+              borderRadius: BorderRadius.circular(30),
               borderSide: const BorderSide(color: Colors.red, width: 1.5),
             ),
           ),
@@ -377,7 +378,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     return IconButton(
       icon: Icon(
         visible ? Icons.visibility : Icons.visibility_off,
-        color: kTextSecondary,
+        color: Theme.of(context).textTheme.bodyMedium?.color,
         size: sw * 0.052,
       ),
       onPressed: onTap,
@@ -391,7 +392,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       children: [
         Text(
           "Already have an account?",
-          style: TextStyle(color: kTextSecondary, fontSize: sw * 0.034),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.034),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context),
@@ -403,7 +404,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           child: Text(
             "Sign In",
             style: TextStyle(
-              color: kPrimaryColor,
+              color: Theme.of(context).primaryColor,
               fontSize: sw * 0.034,
               fontWeight: FontWeight.bold,
             ),

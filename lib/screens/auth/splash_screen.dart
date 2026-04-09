@@ -113,7 +113,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     final sh = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: kPrimaryColor,
+      backgroundColor: Theme.of(context).primaryColor,
       body: Stack(
         children: [
           // Canvas-style ring + particle layer
@@ -272,7 +272,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 style: TextStyle(
                   fontSize: boxSize * 0.54,
                   fontWeight: FontWeight.bold,
-                  color: kPrimaryColor,
+                  color: Theme.of(context).primaryColor,
                   height: 1,
                 ),
               ),
@@ -297,7 +297,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               decoration: BoxDecoration(
                 color: const Color(0xFFFFD700),
                 shape: BoxShape.circle,
-                border: Border.all(color: kPrimaryColor, width: 2.5),
+                border: Border.all(color: Theme.of(context).primaryColor, width: 2.5),
               ),
             )
                 .animate(delay: 900.ms)

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/common_widgets.dart';
 import '../../providers/events_provider.dart';
@@ -8,10 +9,12 @@ import '../../models/reminder_model.dart';
 import 'add_reminder_screen.dart';
 import '../../core/widgets/custom_loader.dart';
 import '../../core/utils/date_helper.dart';
+import '../../providers/theme_provider.dart';
 
 // Same event colors as DatesHomeScreen & HomeScreen
 const Color kBirthdayColor    = Color(0xFFFF6B9D);
 const Color kAnniversaryColor = Color(0xFFFF9500);
+
 class RemindersScreen extends ConsumerWidget {
   const RemindersScreen({super.key});
 
@@ -27,13 +30,14 @@ class RemindersScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _buildAppBar(context, sw),
+      appBar: _buildAppBar(context, ref, sw),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'reminders_fab',
         onPressed: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const AddReminderScreen()),
         ),
-        backgroundColor: kPrimaryColor,
+        backgroundColor: Theme.of(context).primaryColor,
         child: const Icon(Icons.add_alert, color: Colors.white),
       ),
       body: (remindersState.isLoading || eventsAsync.isLoading)
@@ -48,13 +52,13 @@ class RemindersScreen extends ConsumerWidget {
           padding: EdgeInsets.only(bottom: sh * 0.16),
           children: [
             SizedBox(height: sh * 0.016),
-            _buildInfoBanner(hPad, sw),
+            _buildInfoBanner(context, hPad, sw),
             Padding(
               padding: EdgeInsets.fromLTRB(hPad, sh * 0.024, hPad, sh * 0.014),
               child: Text(
                 "Upcoming Events",
                 style: TextStyle(
-                  color: kTextPrimary,
+                  color: Theme.of(context).textTheme.titleLarge?.color,
                   fontSize: sw * 0.048,
                   fontWeight: FontWeight.bold,
                 ),
@@ -69,17 +73,19 @@ class RemindersScreen extends ConsumerWidget {
                   ));
                 }
                 return Column(
-                  children: events.map((e) {
+                  children: List.generate(events.length, (index) {
+                    final e = events[index];
                     final int days = e['daysUntil'] ?? 0;
                     return _buildReminderCard(
                       name: e['contactName'] ?? "Unknown",
                       type: e['type'] ?? "Event",
                       label: e['label'],
-                      // date: e['date'] ?? "",
                       daysUntil: days < 0 ? 0 : days,
                       hPad: hPad, sw: sw, sh: sh,
+                      context: context,
+                      index: index,
                     );
-                  }).toList(),
+                  }),
                 );
               },
               loading: () => const SizedBox.shrink(),
@@ -91,7 +97,7 @@ class RemindersScreen extends ConsumerWidget {
               child: Text(
                 "Custom Reminders",
                 style: TextStyle(
-                  color: kTextPrimary,
+                  color: Theme.of(context).textTheme.titleLarge?.color,
                   fontSize: sw * 0.048,
                   fontWeight: FontWeight.bold,
                 ),
@@ -108,7 +114,8 @@ class RemindersScreen extends ConsumerWidget {
               ))
             else
               Column(
-                children: remindersState.reminders.map((r) {
+                children: List.generate(remindersState.reminders.length, (index) {
+                  final r = remindersState.reminders[index];
                   final date = DateTime.tryParse(r.reminderDate);
                   final int days = date != null ? DateHelper.daysUntilNextOccurrence(date) : 0;
                   return _buildDynamicReminderCard(
@@ -121,8 +128,9 @@ class RemindersScreen extends ConsumerWidget {
                     daysUntil: days < 0 ? 0 : days,
                     isCompleted: r.isCompleted,
                     hPad: hPad, sw: sw, sh: sh,
+                    index: index,
                   );
-                }).toList(),
+                }),
               ),
           ],
         ),
@@ -142,12 +150,13 @@ class RemindersScreen extends ConsumerWidget {
     required double hPad,
     required double sw,
     required double sh,
+    required int index,
   }) {
     return Padding(
       padding: EdgeInsets.fromLTRB(hPad, 0, hPad, sh * 0.012),
       child: AppCard(
-        borderRadius: sw * 0.04,
         padding: EdgeInsets.all(sw * 0.038),
+        delay: (50 * index).ms,
         child: Row(
           children: [
             GestureDetector(
@@ -162,12 +171,12 @@ class RemindersScreen extends ConsumerWidget {
                 width:  sw * 0.12,
                 height: sw * 0.12,
                 decoration: BoxDecoration(
-                  color: isCompleted ? Colors.grey.withOpacity(0.12) : kPrimaryColor.withOpacity(0.12),
+                  color: isCompleted ? Colors.grey.withOpacity(0.12) : Theme.of(context).primaryColor.withOpacity(0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   isCompleted ? Icons.check_circle : Icons.notifications_active_outlined,
-                  color: isCompleted ? Colors.grey : kPrimaryColor,
+                  color: isCompleted ? Colors.grey : Theme.of(context).primaryColor,
                   size: sw * 0.058,
                 ),
               ),
@@ -180,22 +189,22 @@ class RemindersScreen extends ConsumerWidget {
                   Text(
                     title,
                     style: TextStyle(
-                      color: isCompleted ? kTextTertiary : kTextPrimary,
+                      color: isCompleted ? Theme.of(context).textTheme.labelSmall?.color : Theme.of(context).textTheme.titleLarge?.color,
                       fontSize: sw * 0.04,
                       fontWeight: FontWeight.bold,
                       decoration: isCompleted ? TextDecoration.lineThrough : null,
                     ),
                   ),
                   if (description.isNotEmpty)
-                    Text(description, style: TextStyle(color: kTextSecondary, fontSize: sw * 0.029)),
+                    Text(description, style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.029)),
                   SizedBox(height: sh * 0.004),
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: sw * 0.02, vertical: sh * 0.004),
                     decoration: BoxDecoration(
-                      color: kPrimaryColor.withOpacity(0.12),
+                      color: Theme.of(context).primaryColor.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(sw * 0.015),
                     ),
-                    child: Text(date, style: TextStyle(color: kPrimaryColor, fontSize: sw * 0.028, fontWeight: FontWeight.bold)),
+                    child: Text(date, style: TextStyle(color: Theme.of(context).primaryColor, fontSize: sw * 0.028, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -224,8 +233,8 @@ class RemindersScreen extends ConsumerWidget {
             else
               Column(
                 children: [
-                  Text("$daysUntil", style: TextStyle(color: kTextPrimary, fontSize: sw * 0.05, fontWeight: FontWeight.bold)),
-                  Text("days", style: TextStyle(color: kTextSecondary, fontSize: sw * 0.024)),
+                  Text("$daysUntil", style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontSize: sw * 0.05, fontWeight: FontWeight.bold)),
+                  Text("days", style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.024)),
                 ],
               ),
           ],
@@ -234,9 +243,7 @@ class RemindersScreen extends ConsumerWidget {
     );
   }
 
-
-  // ── AppBar ────────────────────────────────────────────────────────────────
-  PreferredSizeWidget _buildAppBar(BuildContext context, double sw) {
+  PreferredSizeWidget _buildAppBar(BuildContext context, WidgetRef ref, double sw) {
     return AppBar(
       leading: IconButton(
         icon: Icon(Icons.menu, size: sw * 0.06),
@@ -244,18 +251,29 @@ class RemindersScreen extends ConsumerWidget {
       ),
       title: Text(
         "Reminders",
-        style: TextStyle(fontSize: sw * 0.048, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          fontSize: sw * 0.048, 
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).appBarTheme.titleTextStyle?.color,
+        ),
       ),
-      actions: [SizedBox(width: sw * 0.12)],
+      actions: [
+        IconButton(
+          icon: Icon(
+            ref.watch(themeProvider) == ThemeMode.dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+            size: sw * 0.055,
+          ),
+          onPressed: () => ref.read(themeProvider.notifier).toggleTheme(),
+        ),
+        SizedBox(width: sw * 0.02),
+      ],
     );
   }
 
-  // ── Info banner ───────────────────────────────────────────────────────────
-  Widget _buildInfoBanner(double hPad, double sw) {
+  Widget _buildInfoBanner(BuildContext context, double hPad, double sw) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: hPad),
       child: AppCard(
-        borderRadius: sw * 0.04,
         padding: EdgeInsets.all(sw * 0.04),
         child: Row(
           children: [
@@ -263,12 +281,12 @@ class RemindersScreen extends ConsumerWidget {
               width:  sw * 0.11,
               height: sw * 0.11,
               decoration: BoxDecoration(
-                color: kPrimaryColor.withOpacity(0.1),
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.notifications_active,
-                color: kPrimaryColor,
+                color: Theme.of(context).primaryColor,
                 size: sw * 0.055,
               ),
             ),
@@ -276,7 +294,7 @@ class RemindersScreen extends ConsumerWidget {
             Expanded(
               child: Text(
                 "You'll be notified before each birthday and anniversary",
-                style: TextStyle(color: kTextSecondary, fontSize: sw * 0.032),
+                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.032),
               ),
             ),
           ],
@@ -285,61 +303,16 @@ class RemindersScreen extends ConsumerWidget {
     );
   }
 
-  // ── Section pill — matches DatesHomeScreen section badges ─────────────────
-  Widget _buildSectionPill(
-      String title,
-      Color color,
-      double hPad,
-      double sw,
-      double sh,
-      ) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(hPad, 0, hPad, sh * 0.012),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: sw * 0.04,
-              vertical:   sh * 0.009,
-            ),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(sw * 0.03),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: sw * 0.016, height: sw * 0.016,
-                  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                ),
-                SizedBox(width: sw * 0.015),
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: sw * 0.034,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Reminder card — mirrors DatesHomeScreen _buildEventCard ───────────────
   Widget _buildReminderCard({
     required String name,
     required String type,
     String? label,
-    // required String date,
     required int daysUntil,
     required double hPad,
     required double sw,
     required double sh,
+    required BuildContext context,
+    required int index,
   }) {
     final isBirthday = type == "Birthday";
     final isToday    = daysUntil == 0;
@@ -349,11 +322,10 @@ class RemindersScreen extends ConsumerWidget {
     return Padding(
       padding: EdgeInsets.fromLTRB(hPad, 0, hPad, sh * 0.012),
       child: AppCard(
-        borderRadius: sw * 0.04,
         padding: EdgeInsets.all(sw * 0.038),
+        delay: (50 * index).ms,
         child: Row(
           children: [
-            // Themed icon circle — same as DatesHomeScreen
             Container(
               width:  sw * 0.12,
               height: sw * 0.12,
@@ -365,7 +337,6 @@ class RemindersScreen extends ConsumerWidget {
             ),
             SizedBox(width: sw * 0.035),
 
-            // Name + type + date badge
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -373,7 +344,7 @@ class RemindersScreen extends ConsumerWidget {
                   Text(
                     name,
                     style: TextStyle(
-                      color: kTextPrimary,
+                      color: Theme.of(context).textTheme.titleLarge?.color,
                       fontSize: sw * 0.04,
                       fontWeight: FontWeight.bold,
                     ),
@@ -381,66 +352,28 @@ class RemindersScreen extends ConsumerWidget {
                   SizedBox(height: sh * 0.004),
                   Text(
                     label != null && label.isNotEmpty ? "$type: $label" : type,
-                    style: TextStyle(color: kTextSecondary, fontSize: sw * 0.029),
+                    style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.029),
                   ),
-                  SizedBox(height: sh * 0.004),
-                  // Colored date badge — same pattern as DatesHomeScreen
-                  // Container(
-                  //   padding: EdgeInsets.symmetric(
-                  //     horizontal: sw * 0.02,
-                  //     vertical:   sh * 0.004,
-                  //   ),
-                  //   decoration: BoxDecoration(
-                  //     color: color.withOpacity(0.12),
-                  //     borderRadius: BorderRadius.circular(sw * 0.015),
-                  //   ),
-                  //   // child: Text(
-                  //   //   // date,
-                  //   //   style: TextStyle(
-                  //   //     color: color,
-                  //   //     fontSize: sw * 0.028,
-                  //   //     fontWeight: FontWeight.bold,
-                  //   //   ),
-                  //   // ),
-                  // ),
                 ],
               ),
             ),
 
-            // Right side: "Today!" badge or days counter
             if (isToday)
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: sw * 0.03,
-                  vertical:   sh * 0.008,
-                ),
-                decoration: BoxDecoration(
-                  color: kPrimaryColor,
-                  borderRadius: BorderRadius.circular(sw * 0.05),
-                ),
-                child: Text(
-                  "Today!",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: sw * 0.03,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              )
+              Text("Today!", style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold, fontSize: sw * 0.032))
             else
               Column(
                 children: [
                   Text(
                     "$daysUntil",
                     style: TextStyle(
-                      color: kTextPrimary,
+                      color: Theme.of(context).textTheme.titleLarge?.color,
                       fontSize: sw * 0.058,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
                     "days",
-                    style: TextStyle(color: kTextSecondary, fontSize: sw * 0.026),
+                    style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.026),
                   ),
                 ],
               ),

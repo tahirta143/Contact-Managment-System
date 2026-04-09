@@ -43,7 +43,7 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
     final contacts = contactsState.contacts;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(sw),
       body: Column(
         children: [
@@ -71,7 +71,11 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
       ),
       title: Text(
         "Dates & Events",
-        style: TextStyle(fontSize: sw * 0.048, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          fontSize: sw * 0.048, 
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).appBarTheme.titleTextStyle?.color,
+        ),
       ),
       actions: [SizedBox(width: sw * 0.12)],
     );
@@ -85,8 +89,15 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
         height: sh * 0.058,
         padding: EdgeInsets.all(sw * 0.01),
         decoration: BoxDecoration(
-          color: kInputBg,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(sw * 0.08),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -104,7 +115,7 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
 
     // Each tab has its own accent color when active
     final Color activeColor = index == 0
-        ? kPrimaryColor
+        ? Theme.of(context).primaryColor
         : index == 1
         ? kBirthdayColor
         : kAnniversaryColor;
@@ -115,9 +126,9 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(sw * 0.07),
-            boxShadow: isSelected
+            color: isSelected ? (Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.1) : Colors.white) : Colors.transparent,
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: isSelected && Theme.of(context).brightness == Brightness.light
                 ? [BoxShadow(color: activeColor.withOpacity(0.15), blurRadius: 6, offset: const Offset(0, 2))]
                 : [],
           ),
@@ -137,7 +148,7 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
                 Text(
                   label,
                   style: TextStyle(
-                    color: isSelected ? activeColor : kTextSecondary,
+                    color: isSelected ? activeColor : Theme.of(context).textTheme.bodyMedium?.color,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     fontSize: sw * 0.034,
                   ),
@@ -214,7 +225,7 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
                 lastDate: DateTime(2100),
                 builder: (ctx, child) => Theme(
                   data: Theme.of(ctx).copyWith(
-                    colorScheme: const ColorScheme.light(primary: kPrimaryColor),
+                    colorScheme: ColorScheme.light(primary: Theme.of(context).primaryColor),
                   ),
                   child: child!,
                 ),
@@ -224,24 +235,24 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: sw * 0.04, vertical: sh * 0.016),
               decoration: BoxDecoration(
-                color: kInputBg,
+                color: Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.circular(sw * 0.05),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.calendar_month, color: kPrimaryColor, size: sw * 0.05),
+                  Icon(Icons.calendar_month, color: Theme.of(context).primaryColor, size: sw * 0.05),
                   SizedBox(width: sw * 0.02),
                   Text(
                     DateFormat('dd MMMM yyyy').format(_selectedDate),
                     style: TextStyle(
-                      color: kTextPrimary,
+                      color: Theme.of(context).textTheme.titleLarge?.color,
                       fontWeight: FontWeight.bold,
                       fontSize: sw * 0.04,
                     ),
                   ),
                   SizedBox(width: sw * 0.02),
-                  Icon(Icons.arrow_drop_down, color: kTextSecondary, size: sw * 0.055),
+                  Icon(Icons.arrow_drop_down, color: Theme.of(context).textTheme.bodyMedium?.color, size: sw * 0.055),
                 ],
               ),
             ),
@@ -254,9 +265,9 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
             onRefresh: () async {
               await ref.read(contactsProvider.notifier).loadContacts();
             },
-            color: kPrimaryColor,
+            color: Theme.of(context).primaryColor,
             child: flatEvents.isEmpty
-                ? const Center(child: Text("No events on this date"))
+                ? Center(child: Text("No events on this date", style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color)))
                 : ListView.builder(
               padding: EdgeInsets.symmetric(horizontal: hPad, vertical: sh * 0.008).copyWith(bottom: sh * 0.16),
               itemCount: flatEvents.length,
@@ -295,19 +306,19 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
         Padding(
           padding: EdgeInsets.symmetric(horizontal: hPad),
           child: AppCard(
-            borderRadius: sw * 0.075,
+            borderRadius: 30,
             height: sh * 0.058,
             padding: EdgeInsets.symmetric(horizontal: sw * 0.04),
             child: TextField(
               onChanged: (val) => setState(() => _searchQuery = val),
-              style: TextStyle(color: kTextPrimary, fontSize: sw * 0.036),
+              style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: sw * 0.036),
               decoration: InputDecoration(
                 hintText: "Search person...",
                 hintStyle: TextStyle(fontSize: sw * 0.034),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
-                prefixIcon: Icon(Icons.search, color: kTextSecondary, size: sw * 0.055),
+                prefixIcon: Icon(Icons.search, color: Theme.of(context).textTheme.bodyMedium?.color, size: sw * 0.055),
               ),
             ),
           ),
@@ -318,9 +329,9 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
             onRefresh: () async {
               await ref.read(contactsProvider.notifier).loadContacts();
             },
-            color: kPrimaryColor,
+            color: Theme.of(context).primaryColor,
             child: filtered.isEmpty
-                ? const Center(child: Text("No persons with events found"))
+                ? Center(child: Text("No persons with events found", style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color)))
                 : ListView.builder(
               padding: EdgeInsets.symmetric(horizontal: hPad, vertical: sh * 0.008).copyWith(bottom: sh * 0.16),
               itemCount: filtered.length,
@@ -353,7 +364,7 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
                 SizedBox(width: sw * 0.03),
                 Text(
                   c.name,
-                  style: TextStyle(color: kTextPrimary, fontSize: sw * 0.045, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontSize: sw * 0.045, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -393,7 +404,7 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
           SizedBox(width: sw * 0.015),
           Text(
             text,
-            style: TextStyle(color: kTextPrimary, fontSize: sw * 0.03, fontWeight: FontWeight.bold),
+            style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.03, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -461,7 +472,7 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildEventToggleBtn("✨  All",           'All',         kPrimaryColor,     sw, sh),
+                _buildEventToggleBtn("✨  All",           'All',         Theme.of(context).primaryColor,     sw, sh),
                 SizedBox(width: sw * 0.02),
                 _buildEventToggleBtn("🎂  Birthdays",    'Birthday',    kBirthdayColor,    sw, sh),
                 SizedBox(width: sw * 0.02),
@@ -479,9 +490,9 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
             onRefresh: () async {
               await ref.read(contactsProvider.notifier).loadContacts();
             },
-            color: kPrimaryColor,
+            color: Theme.of(context).primaryColor,
             child: flatEvents.isEmpty
-                ? Center(child: Text("No $_selectedEventType events recorded"))
+                ? Center(child: Text("No $_selectedEventType events recorded", style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color)))
                 : ListView.builder(
               padding: EdgeInsets.symmetric(horizontal: hPad, vertical: sh * 0.008).copyWith(bottom: sh * 0.16),
               itemCount: flatEvents.length,
@@ -511,17 +522,17 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.symmetric(vertical: sh * 0.012, horizontal: sw * 0.04),
         decoration: BoxDecoration(
-          color: isSelected ? color : kInputBg,
+          color: isSelected ? color : Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(sw * 0.05),
           boxShadow: isSelected
               ? [BoxShadow(color: color.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 3))]
-              : [],
+              : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
         ),
         child: Center(
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? Colors.white : kTextSecondary,
+              color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyMedium?.color,
               fontWeight: FontWeight.bold,
               fontSize: sw * 0.036,
             ),
@@ -566,7 +577,7 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
                 children: [
                   Text(
                     name,
-                    style: TextStyle(color: kTextPrimary, fontWeight: FontWeight.bold, fontSize: sw * 0.04),
+                    style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontWeight: FontWeight.bold, fontSize: sw * 0.04),
                   ),
                   SizedBox(height: sh * 0.005),
                   Row(
@@ -586,14 +597,14 @@ class _DatesHomeScreenState extends ConsumerState<DatesHomeScreen> {
                       SizedBox(width: sw * 0.02),
                       Text(
                         subtitle,
-                        style: TextStyle(color: kTextSecondary, fontSize: sw * 0.029),
+                        style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.029),
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: kTextTertiary, size: sw * 0.055),
+            Icon(Icons.chevron_right, color: Theme.of(context).textTheme.labelSmall?.color, size: sw * 0.055),
           ],
         ),
       ),

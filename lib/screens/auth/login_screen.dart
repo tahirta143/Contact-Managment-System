@@ -103,9 +103,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         sh * 0.042,
       ),
       decoration: BoxDecoration(
-        color: kPrimaryColor,
+        color: Theme.of(context).primaryColor,
         borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(sw * 0.09),
+          bottom: Radius.circular(30),
         ),
       ),
       child: Column(
@@ -184,7 +184,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             suffixIcon: IconButton(
               icon: Icon(
                 _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                color: kTextSecondary,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
                 size: sw * 0.052,
               ),
               onPressed: () =>
@@ -214,7 +214,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: Text(
                 AppStrings.forgotPassword,
                 style: TextStyle(
-                  color: kPrimaryColor,
+                  color: Theme.of(context).primaryColor,
                   fontSize: sw * 0.032,
                   fontWeight: FontWeight.w600,
                 ),
@@ -232,9 +232,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 return ElevatedButton(
                   onPressed: authState.isLoading ? null : _handleLogin,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: kPrimaryColor,
+                    backgroundColor: Theme.of(context).primaryColor,
+                    foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(sw * 0.035),
+                      borderRadius: BorderRadius.circular(30),
                     ),
                     elevation: 0,
                   ),
@@ -285,7 +286,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         Text(
           label,
           style: TextStyle(
-            color: kTextSecondary,
+            color: Theme.of(context).textTheme.bodyMedium?.color,
             fontSize: sw * 0.028,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
@@ -297,33 +298,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           obscureText:  obscureText,
           keyboardType: keyboardType,
           style: TextStyle(
-            color: kTextPrimary,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
             fontSize: sw * 0.038,
             fontWeight: FontWeight.w600,
           ),
           decoration: InputDecoration(
             hintText:   hint,
             filled:     true,
-            fillColor:  kInputBg,
-            prefixIcon: Icon(icon, color: kPrimaryColor, size: sw * 0.052),
+            fillColor:  Theme.of(context).cardTheme.color,
+            prefixIcon: Icon(icon, color: Theme.of(context).primaryColor, size: sw * 0.052),
             suffixIcon: suffixIcon,
             contentPadding: EdgeInsets.symmetric(
               vertical: sh * 0.018,
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(sw * 0.032),
+              borderRadius: BorderRadius.circular(30),
               borderSide: BorderSide.none,
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(sw * 0.032),
-              borderSide: BorderSide(color: kPrimaryColor, width: 1.5),
+              borderRadius: BorderRadius.circular(30),
+              borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 1.5),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(sw * 0.032),
+              borderRadius: BorderRadius.circular(30),
               borderSide: const BorderSide(color: Colors.red, width: 1),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(sw * 0.032),
+              borderRadius: BorderRadius.circular(30),
               borderSide: const BorderSide(color: Colors.red, width: 1.5),
             ),
           ),
@@ -339,15 +340,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       padding: EdgeInsets.symmetric(vertical: sh * 0.022),
       child: Row(
         children: [
-          Expanded(child: Divider(color: kTextTertiary.withOpacity(0.2), thickness: 0.5)),
+          Expanded(child: Divider(color: Theme.of(context).dividerColor.withOpacity(0.2), thickness: 0.5)),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: sw * 0.04),
             child: Text(
               "or continue with",
-              style: TextStyle(color: kTextSecondary, fontSize: sw * 0.03),
+              style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.03),
             ),
           ),
-          Expanded(child: Divider(color: kTextTertiary.withOpacity(0.2), thickness: 0.5)),
+          Expanded(child: Divider(color: Theme.of(context).dividerColor.withOpacity(0.2), thickness: 0.5)),
         ],
       ),
     );
@@ -382,7 +383,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Text(
                 label,
                 style: TextStyle(
-                  color: kTextPrimary,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                   fontSize: sw * 0.036,
                   fontWeight: FontWeight.w600,
                 ),
@@ -401,7 +402,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       children: [
         Text(
           AppStrings.dontHaveAccount,
-          style: TextStyle(color: kTextSecondary, fontSize: sw * 0.034),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.034),
         ),
         TextButton(
           onPressed: () => Navigator.push(
@@ -416,7 +417,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Text(
             "Sign Up",
             style: TextStyle(
-              color: kPrimaryColor,
+              color: Theme.of(context).primaryColor,
               fontSize: sw * 0.034,
               fontWeight: FontWeight.bold,
             ),
@@ -433,7 +434,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       children: [
         Text(
           "Developed by",
-          style: TextStyle(color: kTextSecondary, fontSize: sw * 0.034),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.034),
         ),
         TextButton(
           onPressed: () async {
@@ -448,11 +449,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Text(
             "Afaq Technologies",
             style: TextStyle(
-              color: kPrimaryColor,
+              color: Theme.of(context).primaryColor,
               fontSize: sw * 0.034,
               fontWeight: FontWeight.bold,
               decoration: TextDecoration.underline,
-              decorationColor: kPrimaryColor,
+              decorationColor: Theme.of(context).primaryColor,
             ),
           ),
         ),

@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/api_constants.dart';
@@ -13,6 +14,9 @@ import 'contact_detail_screen.dart';
 import 'edit_contact_screen.dart';
 import '../../providers/contacts_provider.dart';
 import '../../core/widgets/custom_loader.dart';
+
+// - [x] Redesign `lib/screens/contacts/contacts_list_screen.dart` with `AppCard` and shadows
+// - [/] Clean up `lib/screens/main_screen.dart` drawer theme usage
 
 class ContactsListScreen extends ConsumerStatefulWidget {
   const ContactsListScreen({super.key});
@@ -57,18 +61,14 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
     final sh             = size.height;
     final hPad           = sw * 0.045;          // horizontal padding
     final searchHeight   = sh * 0.058;          // search bar height
-    final filterHeight   = sh * 0.058;          // filter row height
     final avatarRadius   = sw * 0.06;           // contact avatar radius
     final titleFontSize  = sw * 0.038;          // contact name font size
     final subFontSize    = sw * 0.030;          // subtitle font size
     final iconSize       = sw * 0.055;          // trailing icon size
-    final cardRadius     = sw * 0.04;           // card border radius
-    final itemSpacing    = sh * 0.014;          // spacing between list items
-    final chipFontSize   = sw * 0.032;          // filter chip label font size
+    final cardRadius     = 30.0;           // Standardized card border radius
+    final itemSpacing    = sh * 0.008;          // Reduced from 0.014 for thinner look
 
     final contactsState = ref.watch(contactsProvider);
-
-
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -124,7 +124,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
       actions: [
         if (isAdmin)
           IconButton(
-            icon: Icon(Icons.add_circle_outline, color: Colors.white, size: sw * 0.065),
+            icon: Icon(Icons.add_circle_outline, color: Theme.of(context).appBarTheme.iconTheme?.color, size: sw * 0.065),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const AddContactScreen()),
@@ -145,11 +145,11 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
         padding: EdgeInsets.symmetric(horizontal: sw * 0.04),
         child: TextField(
           controller: _searchController,
-          style: TextStyle(color: kTextPrimary, fontSize: sw * 0.035),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: sw * 0.035),
           decoration: InputDecoration(
             hintText: AppStrings.searchHint,
             hintStyle: TextStyle(fontSize: sw * 0.034),
-            prefixIcon: Icon(Icons.search, color: kTextSecondary, size: sw * 0.055),
+            prefixIcon: Icon(Icons.search, color: Theme.of(context).textTheme.bodyMedium?.color, size: sw * 0.055),
             filled: false,
             border: InputBorder.none,
             enabledBorder: InputBorder.none,
@@ -191,13 +191,15 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
                         filter,
                         style: TextStyle(
                           fontSize: sw * 0.032,
-                          color: isSelected ? Colors.white : kTextSecondary,
+                          color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyMedium?.color,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
-                      backgroundColor: isSelected ? kPrimaryColor : kInputBg,
+                      backgroundColor: isSelected ? Theme.of(context).primaryColor : Theme.of(context).cardTheme.color,
+                      elevation: isSelected ? 4 : 0,
+                      shadowColor: Colors.black.withOpacity(0.1),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(30),
                         side: BorderSide.none,
                       ),
                     ),
@@ -224,15 +226,15 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: sw * 0.02, vertical: sw * 0.01),
       decoration: BoxDecoration(
-        color: Theme.of(context).inputDecorationTheme.fillColor ?? const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(sw * 0.02),
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(30),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
           isExpanded: true,
-          icon: Icon(Icons.arrow_drop_down, size: sw * 0.04),
-          style: TextStyle(fontSize: sw * 0.032, color: kTextPrimary),
+          icon: Icon(Icons.arrow_drop_down, size: sw * 0.04, color: Theme.of(context).textTheme.bodyMedium?.color),
+          style: TextStyle(fontSize: sw * 0.032, color: Theme.of(context).textTheme.titleLarge?.color),
           onChanged: onChanged,
           items: items.map((item) {
             return DropdownMenuItem<String>(
@@ -295,16 +297,17 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
             child: AppCard(
               borderRadius: cardRadius,
               padding: EdgeInsets.all(sw * 0.02),
+              delay: (50 * index).ms,
               child: ListTile(
-                contentPadding: EdgeInsets.symmetric(horizontal: sw * 0.03, vertical: sw * 0.01),
+                contentPadding: EdgeInsets.symmetric(horizontal: sw * 0.04, vertical: sw * 0.008),
                 leading: Container(
                   padding: EdgeInsets.all(sw * 0.025),
-                  decoration: BoxDecoration(color: kPrimaryColor.withOpacity(0.1), shape: BoxShape.circle),
-                  child: Icon(Icons.style, color: kPrimaryColor, size: sw * 0.06),
+                  decoration: BoxDecoration(color: Theme.of(context).primaryColor.withOpacity(0.1), shape: BoxShape.circle),
+                  child: Icon(Icons.style, color: Theme.of(context).primaryColor, size: sw * 0.06),
                 ),
-                title: Text(groupName.toUpperCase(), style: TextStyle(color: kTextPrimary, fontSize: titleFontSize, fontWeight: FontWeight.bold)),
-                subtitle: Text("${groupContacts.length} Contact${groupContacts.length == 1 ? '' : 's'}", style: TextStyle(color: kTextSecondary, fontSize: subFontSize)),
-                trailing: Icon(Icons.chevron_right, color: kTextTertiary, size: iconSize),
+                title: Text(groupName.toUpperCase(), style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontSize: titleFontSize, fontWeight: FontWeight.bold)),
+                subtitle: Text("${groupContacts.length} Contact${groupContacts.length == 1 ? '' : 's'}", style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: subFontSize)),
+                trailing: Icon(Icons.chevron_right, color: Theme.of(context).textTheme.labelSmall?.color, size: iconSize),
                 onTap: () {
                   Navigator.push(
                     context,
@@ -324,14 +327,13 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
       );
     }
 
-      // Default list view
     return ListView.builder(
       padding: EdgeInsets.symmetric(horizontal: hPad),
       itemCount: displayContacts.length,
       itemBuilder: (context, index) {
         return _buildContactCard(
           displayContacts[index], isAdmin, avatarRadius, titleFontSize, 
-          subFontSize, iconSize, cardRadius, itemSpacing, sw,
+          subFontSize, iconSize, cardRadius, itemSpacing, sw, index,
         );
       },
     );
@@ -347,11 +349,13 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
       double cardRadius,
       double itemSpacing,
       double sw,
+      int index,
       ) {
     return Padding(
       padding: EdgeInsets.only(bottom: itemSpacing),
       child: AppCard(
         borderRadius: cardRadius,
+        delay: (50 * index).ms,
         child: ListTile(
           onTap: () => Navigator.push(
             context,
@@ -360,8 +364,8 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
             ),
           ),
           contentPadding: EdgeInsets.symmetric(
-            horizontal: sw * 0.04,
-            vertical: sw * 0.02,
+            horizontal: sw * 0.045,
+            vertical: sw * 0.008,
           ),
           leading: contact.photoUrl != null
               ? CircleAvatar(
@@ -379,7 +383,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
           title: Text(
             contact.name,
             style: TextStyle(
-              color: kTextPrimary,
+              color: Theme.of(context).textTheme.titleLarge?.color,
               fontWeight: FontWeight.w600,
               fontSize: titleFontSize,
             ),
@@ -395,14 +399,14 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.business, size: sw * 0.035, color: kPrimaryColor),
+                        Icon(Icons.business, size: sw * 0.035, color: Theme.of(context).primaryColor),
                         SizedBox(width: sw * 0.01),
                         Expanded(
                           child: Text(
                             contact.company!,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: kPrimaryColor, fontSize: subFontSize, fontWeight: FontWeight.w500),
+                            style: TextStyle(color: Theme.of(context).primaryColor, fontSize: subFontSize, fontWeight: FontWeight.w500),
                           ),
                         ),
                       ],
@@ -410,35 +414,8 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
                   ),
                 Text(
                   "${contact.designation ?? ''}${contact.designation != null && contact.city != null ? ' · ' : ''}${contact.city ?? ''}",
-                  style: TextStyle(color: kTextSecondary, fontSize: subFontSize),
+                  style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: subFontSize),
                 ),
-                // if (contact.upcomingEvent != null)
-                //   Padding(
-                //     padding: EdgeInsets.only(top: sw * 0.012),
-                //     child: Container(
-                //       padding: EdgeInsets.symmetric(horizontal: sw * 0.02, vertical: sw * 0.005),
-                //       decoration: BoxDecoration(
-                //         color: kPrimaryColor.withOpacity(0.1),
-                //         borderRadius: BorderRadius.circular(sw * 0.01),
-                //         border: Border.all(color: kPrimaryColor.withOpacity(0.2)),
-                //       ),
-                //       child: Row(
-                //         mainAxisSize: MainAxisSize.min,
-                //         children: [
-                //           Icon(Icons.event_note, size: sw * 0.03, color: kPrimaryColor),
-                //           SizedBox(width: sw * 0.01),
-                //           Text(
-                //             "${contact.upcomingEvent!['name']}: ${DateHelper.countdownText(contact.upcomingEvent!['days'])}",
-                //             style: TextStyle(
-                //               color: kPrimaryColor,
-                //               fontSize: sw * 0.026,
-                //               fontWeight: FontWeight.bold,
-                //             ),
-                //           ),
-                //         ],
-                //       ),
-                //     ),
-                //   ),
               ],
             ),
           ),
@@ -447,7 +424,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
-                icon: Icon(Icons.edit_outlined, color: kTextSecondary, size: iconSize),
+                icon: Icon(Icons.edit_outlined, color: Theme.of(context).textTheme.bodyMedium?.color, size: iconSize),
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -461,7 +438,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
               ),
             ],
           )
-              : Icon(Icons.chevron_right, color: kTextTertiary, size: iconSize * 1.2),
+              : Icon(Icons.chevron_right, color: Theme.of(context).textTheme.labelSmall?.color, size: iconSize * 1.2),
         ),
       ),
     );
@@ -477,16 +454,16 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(sw * 0.04)),
         title: Text(
           "Delete Contact",
-          style: TextStyle(color: kTextPrimary, fontSize: sw * 0.045),
+          style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontSize: sw * 0.045),
         ),
         content: Text(
           "Are you sure you want to delete this contact?",
-          style: TextStyle(color: kTextSecondary, fontSize: sw * 0.035),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.035),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text("CANCEL", style: TextStyle(color: kTextTertiary, fontSize: sw * 0.035)),
+            child: Text("CANCEL", style: TextStyle(color: Theme.of(context).textTheme.labelSmall?.color, fontSize: sw * 0.035)),
           ),
           TextButton(
             onPressed: () async {
@@ -547,12 +524,12 @@ class _GroupContactsScreenState extends ConsumerState<GroupContactsScreen> {
       builder: (_) => AlertDialog(
         backgroundColor: Theme.of(context).dialogBackgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(sw * 0.04)),
-        title: Text("Delete Contact", style: TextStyle(color: kTextPrimary, fontSize: sw * 0.045)),
-        content: Text("Are you sure you want to delete this contact?", style: TextStyle(color: kTextSecondary, fontSize: sw * 0.035)),
+        title: Text("Delete Contact", style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontSize: sw * 0.045)),
+        content: Text("Are you sure you want to delete this contact?", style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.035)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text("Cancel", style: TextStyle(color: kTextSecondary, fontSize: sw * 0.035)),
+            child: Text("Cancel", style: TextStyle(color: Theme.of(context).textTheme.labelSmall?.color, fontSize: sw * 0.035)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -587,7 +564,7 @@ class _GroupContactsScreenState extends ConsumerState<GroupContactsScreen> {
     final subFontSize = sw * 0.030;
     final iconSize = sw * 0.055;
     final cardRadius = sw * 0.04;
-    final itemSpacing = MediaQuery.of(context).size.height * 0.014;
+    final itemSpacing = MediaQuery.of(context).size.height * 0.008; // Reduced from 0.014
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -619,10 +596,11 @@ class _GroupContactsScreenState extends ConsumerState<GroupContactsScreen> {
                           builder: (_) => ContactDetailScreen(contactId: contact.id),
                         ),
                       ),
-                      contentPadding: EdgeInsets.symmetric(horizontal: sw * 0.04, vertical: sw * 0.02),
+                      contentPadding: EdgeInsets.symmetric(horizontal: sw * 0.04, vertical: sw * 0.008),
                       leading: contact.photoUrl != null
                           ? CircleAvatar(
                               radius: avatarRadius,
+                              backgroundColor: Theme.of(context).cardTheme.color,
                               backgroundImage: CachedNetworkImageProvider(
                                 contact.photoUrl!.startsWith('http')
                                     ? contact.photoUrl!
@@ -635,7 +613,7 @@ class _GroupContactsScreenState extends ConsumerState<GroupContactsScreen> {
                             ),
                       title: Text(
                         contact.name,
-                        style: TextStyle(color: kTextPrimary, fontWeight: FontWeight.w600, fontSize: titleFontSize),
+                        style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontWeight: FontWeight.w600, fontSize: titleFontSize),
                       ),
                       subtitle: Padding(
                         padding: EdgeInsets.only(top: sw * 0.008),
@@ -648,14 +626,14 @@ class _GroupContactsScreenState extends ConsumerState<GroupContactsScreen> {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.business, size: sw * 0.035, color: kPrimaryColor),
+                                    Icon(Icons.business, size: sw * 0.035, color: Theme.of(context).primaryColor),
                                     SizedBox(width: sw * 0.01),
                                     Expanded(
                                       child: Text(
                                         contact.company!,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(color: kPrimaryColor, fontSize: subFontSize, fontWeight: FontWeight.w500),
+                                        style: TextStyle(color: Theme.of(context).primaryColor, fontSize: subFontSize, fontWeight: FontWeight.w500),
                                       ),
                                     ),
                                   ],
@@ -663,7 +641,7 @@ class _GroupContactsScreenState extends ConsumerState<GroupContactsScreen> {
                               ),
                             Text(
                               "${contact.designation ?? ''}${contact.designation != null && contact.city != null ? ' · ' : ''}${contact.city ?? ''}",
-                              style: TextStyle(color: kTextSecondary, fontSize: subFontSize),
+                              style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: subFontSize),
                             ),
                           ],
                         ),
@@ -673,7 +651,7 @@ class _GroupContactsScreenState extends ConsumerState<GroupContactsScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  icon: Icon(Icons.edit_outlined, color: kTextSecondary, size: iconSize),
+                                  icon: Icon(Icons.edit_outlined, color: Theme.of(context).textTheme.bodyMedium?.color, size: iconSize),
                                   onPressed: () => Navigator.push(
                                     context,
                                     MaterialPageRoute(builder: (_) => EditContactScreen(contactId: contact.id)),
@@ -685,7 +663,7 @@ class _GroupContactsScreenState extends ConsumerState<GroupContactsScreen> {
                                 ),
                               ],
                             )
-                          : Icon(Icons.chevron_right, color: kTextTertiary, size: iconSize * 1.2),
+                          : Icon(Icons.chevron_right, color: Theme.of(context).textTheme.labelSmall?.color, size: iconSize * 1.2),
                     ),
                   ),
                 );

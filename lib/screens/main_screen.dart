@@ -85,11 +85,11 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   Widget _buildDrawer(bool isAdmin) {
     final sw = MediaQuery.of(context).size.width;
     final sh = MediaQuery.of(context).size.height;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final drawerBg = isDark ? const Color(0xFF1A1D27) : Colors.white;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Drawer(
-      backgroundColor: drawerBg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       width: sw * 0.78,                          // responsive drawer width
       child: Column(
         children: [
@@ -147,6 +147,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   Widget _buildDrawerHeader(double sw, double sh) {
     final user       = ref.watch(authProvider).user;
     final topPadding = MediaQuery.of(context).padding.top;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       width: double.infinity,
@@ -156,7 +158,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         sw * 0.055,
         sh * 0.032,
       ),
-      color: kPrimaryColor,
+      color: isDark ? theme.cardTheme.color : theme.primaryColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -172,7 +174,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
               child: Text(
                 user?.name.isNotEmpty == true ? user!.name[0].toUpperCase() : "U",
                 style: TextStyle(
-                  color: kPrimaryColor,
+                  color: theme.primaryColor,
                   fontSize: sw * 0.06,
                   fontWeight: FontWeight.bold,
                 ),
@@ -209,9 +211,10 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       double   sw,
       double   sh,
       ) {
+    final theme = Theme.of(context);
     final isSelected = _selectedIndex == index;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? const Color(0xFFF1F5F9) : kTextSecondary;
+    final textColor = theme.textTheme.titleLarge?.color;
+    final accent = theme.primaryColor;
 
     return InkWell(
       onTap: () {
@@ -229,9 +232,9 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? kPrimaryColor.withOpacity(0.12)
+              ? accent.withOpacity(0.12)
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(sw * 0.03),
+          borderRadius: BorderRadius.circular(30),
         ),
         child: Row(
           children: [
@@ -241,15 +244,13 @@ class _MainScreenState extends ConsumerState<MainScreen> {
               height: sw * 0.1,
               decoration: BoxDecoration(
                 color: isSelected
-                    ? kPrimaryColor.withOpacity(0.15)
-                    : (isDark
-                        ? Colors.white.withOpacity(0.06)
-                        : kTextTertiary.withOpacity(0.08)),
+                    ? accent.withOpacity(0.15)
+                    : theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(sw * 0.025),
               ),
               child: Icon(
                 icon,
-                color: isSelected ? kPrimaryColor : textColor,
+                color: isSelected ? accent : textColor?.withOpacity(0.6),
                 size: sw * 0.052,
               ),
             ),
@@ -257,9 +258,9 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             Text(
               title,
               style: TextStyle(
-                color: isSelected ? kPrimaryColor : textColor,
+                color: isSelected ? accent : textColor?.withOpacity(isSelected ? 1.0 : 0.7),
                 fontSize: sw * 0.038,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               ),
             ),
           ],
@@ -271,9 +272,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 // ── Dark mode toggle tile ─────────────────────────────────────────────────────
   Widget _buildThemeToggle(double sw, double sh) {
     final isDark = ref.watch(themeProvider) == ThemeMode.dark;
-    final textColor = Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFFF1F5F9)
-        : kTextSecondary;
+    final theme = Theme.of(context);
+    final textColor = theme.textTheme.bodyMedium?.color;
 
     return Padding(
       padding: EdgeInsets.symmetric(
@@ -288,13 +288,13 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             height: sw * 0.1,
             decoration: BoxDecoration(
               color: isDark
-                  ? kPrimaryColor.withOpacity(0.15)
-                  : kTextTertiary.withOpacity(0.08),
+                  ? theme.primaryColor.withOpacity(0.15)
+                  : theme.textTheme.labelSmall?.color?.withOpacity(0.08),
               borderRadius: BorderRadius.circular(sw * 0.025),
             ),
             child: Icon(
               isDark ? Icons.dark_mode : Icons.light_mode,
-              color: isDark ? kPrimaryColor : kTextSecondary,
+              color: isDark ? theme.primaryColor : theme.textTheme.bodyMedium?.color,
               size: sw * 0.052,
             ),
           ),
@@ -316,10 +316,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
               onChanged: (_) {
                 ref.read(themeProvider.notifier).toggleTheme();
               },
-              activeColor: kPrimaryColor,
-              activeTrackColor: kPrimaryColor.withOpacity(0.3),
-              inactiveThumbColor: kTextTertiary,
-              inactiveTrackColor: kTextTertiary.withOpacity(0.2),
+              activeColor: theme.primaryColor,
+              activeTrackColor: theme.primaryColor.withOpacity(0.3),
             ),
           ),
         ],
@@ -380,36 +378,33 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   }
 
   Widget _buildBottomNav(bool isAdmin, int currentIndex) {
+    final theme = Theme.of(context);
     final size = MediaQuery.of(context).size;
     final bottomMargin = size.height * 0.035;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = theme.brightness == Brightness.dark;
 
-    // Dark mode: dark card bg with subtle border + cyan selected items
-    // Light mode: original cyan pill with white items
-    final navBg   = isDark ? const Color(0xFF13161F) : kPrimaryColor;
-    final selColor = isDark ? kPrimaryColor : Colors.white;
-    final unselColor = isDark ? const Color(0xFF5C657A) : Colors.white54;
+    final navBg   = isDark ? theme.cardTheme.color : theme.primaryColor;
+    final selColor = isDark ? theme.primaryColor : Colors.white;
+    final unselColor = isDark ? theme.textTheme.bodySmall?.color : Colors.white60;
 
     return Container(
       margin: EdgeInsets.fromLTRB(16, 0, 16, bottomMargin),
       decoration: BoxDecoration(
         color: navBg,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
         border: isDark
-            ? Border.all(color: const Color(0xFF1E2236), width: 1)
+            ? Border.all(color: theme.dividerColor, width: 1)
             : null,
         boxShadow: [
           BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.5)
-                : Colors.black.withOpacity(0.3),
+            color: theme.colorScheme.shadow,
             blurRadius: 20,
-            offset: const Offset(0, 6),
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
         child: BottomNavigationBar(
           currentIndex: currentIndex,
           showSelectedLabels: true,

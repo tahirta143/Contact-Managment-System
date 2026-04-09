@@ -1,6 +1,8 @@
 import 'package:contacts_management/screens/contacts/add_contact_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
@@ -14,6 +16,7 @@ import '../../providers/reminders_provider.dart';
 import '../dates/dates_home_screen.dart';
 import '../../core/utils/date_helper.dart';
 import '../../core/widgets/custom_loader.dart';
+import '../../providers/theme_provider.dart';
 
 // ─── Themed colors for icons (independent of AppBar/primary color) ───────────
 const Color kBirthdayColor    = Color(0xFFFF6B9D); // pink
@@ -64,7 +67,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final remindersState = ref.watch(remindersProvider);
 
     // Filter events based on _selectedHomeDate
-    final dateStr = DateFormat('MM-dd').format(_selectedHomeDate);
+    final selMonth = _selectedHomeDate.month;
+    final selDay   = _selectedHomeDate.day;
     final isToday = DateFormat('yyyy-MM-dd').format(_selectedHomeDate) == DateFormat('yyyy-MM-dd').format(DateTime.now());
     
     List<Map<String, dynamic>> selectedDateBirthdays = [];
@@ -72,22 +76,76 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     List<Map<String, dynamic>> selectedDateCustomEvents = [];
     List<Map<String, dynamic>> upcomingReminders = [];
 
+    final contacts = contactsState.contacts;
+    for (var c in contacts) {
+      if (c.birthday != null) {
+        if (c.birthday!.month == selMonth && c.birthday!.day == selDay) {
+          selectedDateBirthdays.add({
+            'contactId': c.id,
+            'contactName': c.name,
+            'name': c.name,
+            'photoUrl': c.photoUrl,
+            'type': 'Birthday',
+            'date': c.birthday!.toIso8601String(),
+          });
+        }
+      }
+      if (c.anniversary != null) {
+        if (c.anniversary!.month == selMonth && c.anniversary!.day == selDay) {
+          selectedDateAnniversaries.add({
+            'contactId': c.id,
+            'contactName': c.name,
+            'name': c.name,
+            'photoUrl': c.photoUrl,
+            'type': 'Anniversary',
+            'date': c.anniversary!.toIso8601String(),
+          });
+        }
+      }
+      for (var e in c.events) {
+        if (e.date.month == selMonth && e.date.day == selDay) {
+          selectedDateCustomEvents.add({
+            'contactId': c.id,
+            'contactName': c.name,
+            'name': c.name,
+            'photoUrl': c.photoUrl,
+            'type': e.type,
+            'label': e.label,
+            'date': e.date.toIso8601String(),
+          });
+        }
+      }
+    }
+
     upcomingEvents.whenData((events) {
       for (var e in events) {
-        final eventDate = e['date'] != null ? DateTime.parse(e['date']) : null;
-        if (eventDate != null) {
-          final eventDateStr = DateFormat('MM-dd').format(eventDate);
-          if (eventDateStr == dateStr) {
-            if (e['type'] == 'Birthday') {
-              selectedDateBirthdays.add(e);
-            } else if (e['type'] == 'Anniversary') {
-              selectedDateAnniversaries.add(e);
+        final eventDateStr = e['date'] as String?;
+        if (eventDateStr != null) {
+          final eventDate = DateTime.tryParse(eventDateStr);
+          if (eventDate != null) {
+            final isSameDay = eventDate.month == selMonth && eventDate.day == selDay;
+            if (isSameDay) {
+              // Add to selected lists if not already added from contacts
+              final contactId = e['contactId'];
+              final type = e['type'];
+              
+              if (type == 'Birthday') {
+                if (!selectedDateBirthdays.any((b) => b['contactId'] == contactId)) {
+                  selectedDateBirthdays.add(e);
+                }
+              } else if (type == 'Anniversary') {
+                if (!selectedDateAnniversaries.any((a) => a['contactId'] == contactId)) {
+                  selectedDateAnniversaries.add(e);
+                }
+              } else {
+                // For custom events, check by contact and type/label
+                if (!selectedDateCustomEvents.any((ce) => ce['contactId'] == contactId && ce['type'] == type)) {
+                  selectedDateCustomEvents.add(e);
+                }
+              }
             } else {
-              // Custom events happening on this date
-              selectedDateCustomEvents.add(e);
+              upcomingReminders.add(e);
             }
-          } else {
-            upcomingReminders.add(e);
           }
         }
       }
@@ -145,9 +203,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     );
                     if (date != null) {
                       setState(() => _selectedHomeDate = date);
-                      // Trigger a fresh data load when date changes
-                      ref.read(contactsProvider.notifier).loadContacts();
-                      ref.read(remindersProvider.notifier).loadReminders();
+                      // Only invalidate upcomingEvents as contacts are already loaded
                       ref.invalidate(upcomingEventsProvider(30));
                     }
                   },
@@ -195,7 +251,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
               if (selectedDateAnniversaries.isNotEmpty) ...[
                 _buildSectionHeader(isToday ? AppStrings.todayAnniversaries : "Anniversaries (${DateFormat('dd MMM').format(_selectedHomeDate)})", hPad, kAnniversaryColor, sw, sh),
-                _buildAnniversaryRow(selectedDateAnniversaries, hPad, sw),
+                _buildAnniversaryRow(selectedDateAnniversaries, hPad, sw, sh),
                 SizedBox(height: sh * 0.028),
               ],
               if (selectedDateCustomEvents.isNotEmpty) ...[
@@ -229,26 +285,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       title: Text(
         AppStrings.appName,
-        style: TextStyle(fontSize: sw * 0.048, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          fontSize: sw * 0.048, 
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).appBarTheme.titleTextStyle?.color,
+        ),
       ),
       actions: [
+        IconButton(
+          icon: Icon(
+            ref.watch(themeProvider) == ThemeMode.dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+            size: sw * 0.055,
+          ),
+          onPressed: () => ref.read(themeProvider.notifier).toggleTheme(),
+        ),
         Padding(
           padding: EdgeInsets.only(right: sw * 0.04),
-          child: ref.watch(authProvider).user?.photoUrl != null
-              ? CircleAvatar(
-                  radius: sw * 0.045,
-                  backgroundImage: CachedNetworkImageProvider(
-                    ref.watch(authProvider).user!.photoUrl!.startsWith('http')
-                        ? ref.watch(authProvider).user!.photoUrl!
-                        : "${ApiConstants.baseImageUrl}${ref.watch(authProvider).user!.photoUrl}",
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
+            ),
+            child: ref.watch(authProvider).user?.photoUrl != null
+                ? CircleAvatar(
+                    radius: sw * 0.045,
+                    backgroundImage: CachedNetworkImageProvider(
+                      ref.watch(authProvider).user!.photoUrl!.startsWith('http')
+                          ? ref.watch(authProvider).user!.photoUrl!
+                          : "${ApiConstants.baseImageUrl}${ref.watch(authProvider).user!.photoUrl}",
+                    ),
+                  )
+                : GradientAvatar(
+                    radius: sw * 0.045,
+                    backgroundColor: Colors.white,
+                    textColor: Theme.of(context).primaryColor,
+                    initials: ref.watch(authProvider).user?.name.isNotEmpty == true
+                        ? ref.watch(authProvider).user!.name[0].toUpperCase()
+                        : "U",
                   ),
-                )
-              : GradientAvatar(
-                  radius: sw * 0.045,
-                  initials: ref.watch(authProvider).user?.name.isNotEmpty == true
-                      ? ref.watch(authProvider).user!.name[0].toUpperCase()
-                      : "U",
-                ),
+          ),
         ),
       ],
     );
@@ -256,84 +331,81 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   // ── Greeting card ────────────────────────────────────────────────────────
   Widget _buildGreetingCard(String name, double hPad, double sw, double sh) {
-    final now  = DateTime.now();
-    final date = DateFormat('EEEE, d MMMM yyyy').format(now);
-    final hour = now.hour;
+    final user = ref.watch(authProvider).user;
+    final theme = Theme.of(context);
+    final accent = theme.primaryColor;
+    final textPri = theme.textTheme.titleLarge?.color;
+    final textSec = theme.textTheme.bodyMedium?.color;
     
-    String greeting;
-    IconData timeIcon;
-    List<Color> gradientColors;
-
-    if (hour < 12) {
-      greeting = "Good morning";
-      timeIcon = Icons.wb_sunny_rounded;
-      gradientColors = [const Color(0xFFF7971E), const Color(0xFFFFD200)]; // Vibrant sunrise
-    } else if (hour < 17) {
-      greeting = "Good afternoon";
-      timeIcon = Icons.cloud_rounded;
-      gradientColors = [const Color(0xff21b2d5), const Color(0xff29b3d5)]; // Bright afternoon
-    } else {
-      greeting = "Good evening";
-      timeIcon = Icons.nights_stay_rounded;
-      gradientColors = [const Color(0xFF2C3E50), const Color(0xFF3498DB)]; // Evening dusk
-    }
-
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: hPad),
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(sw * 0.06),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(sw * 0.05),
-          gradient: LinearGradient(
-            colors: gradientColors,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: gradientColors.last.withOpacity(0.4),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
+      child: AppCard(
+        padding: EdgeInsets.all(sw * 0.05),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    date.toUpperCase(),
+                    "Welcome back,",
                     style: TextStyle(
-                      fontSize: sw * 0.028,
-                      color: Colors.white.withOpacity(0.85),
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.2,
+                      fontSize: sw * 0.035,
+                      color: textSec,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  SizedBox(height: sh * 0.006),
+                  SizedBox(height: sh * 0.002),
                   Text(
-                    "$greeting,\n$name!",
+                    name,
                     style: TextStyle(
-                      fontSize: sw * 0.052,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      height: 1.25,
+                      fontSize: sw * 0.055,
+                      fontWeight: FontWeight.bold,
+                      color: textPri,
+                    ),
+                  ),
+                  SizedBox(height: sh * 0.004),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: accent.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      user?.isAdmin == true ? "Administrator" : "User",
+                      style: TextStyle(
+                        fontSize: sw * 0.026,
+                        color: accent,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
+            SizedBox(width: sw * 0.03),
+            // Profile photo on the right
             Container(
-              padding: EdgeInsets.all(sw * 0.035),
+              width: sw * 0.16,
+              height: sw * 0.16,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.25),
                 shape: BoxShape.circle,
+                border: Border.all(color: accent.withOpacity(0.2), width: 1.5),
+                image: user?.photoUrl != null
+                    ? DecorationImage(
+                        image: CachedNetworkImageProvider(
+                          user!.photoUrl!.startsWith('http')
+                              ? user!.photoUrl!
+                              : "${ApiConstants.baseImageUrl}${user.photoUrl}",
+                        ),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+                color: theme.colorScheme.surfaceContainerHighest,
               ),
-              child: Icon(timeIcon, color: Colors.white, size: sw * 0.08),
+              child: user?.photoUrl == null
+                  ? Icon(Icons.person, size: sw * 0.08, color: accent)
+                  : null,
             ),
           ],
         ),
@@ -357,40 +429,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       crossAxisCount: 2,
       mainAxisSpacing: sw * 0.03,
       crossAxisSpacing: sw * 0.03,
-      childAspectRatio: 1.9,
+      childAspectRatio: 2.0,
       padding: EdgeInsets.symmetric(horizontal: hPad),
       children: [
-        _buildCountCard("Total Contacts", contactsCount, Icons.people_outline,      kContactsColor, sw, sh),
-        _buildCountCard("Today's Events", todayEventsCount,   Icons.event_available,     kEventsColor,   sw, sh),
-        _buildCountCard("Upcoming",       upcomingCount,  Icons.upcoming,            kUpcomingColor, sw, sh),
-        _buildCountCard("Groups",         groupsCount,    Icons.group_work_outlined, kGroupsColor,   sw, sh),
+        _buildCountCard("Total Contacts", contactsCount, Icons.people_outline,      kContactsColor, sw, sh).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1, end: 0),
+        _buildCountCard("Today's Events", todayEventsCount,   Icons.event_available,     kEventsColor,   sw, sh).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
+        _buildCountCard("Upcoming",       upcomingCount,  Icons.upcoming,            kUpcomingColor, sw, sh).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1, end: 0),
+        _buildCountCard("Groups",         groupsCount,    Icons.group_work_outlined, kGroupsColor,   sw, sh).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0),
       ],
     );
   }
 
   Widget _buildCountCard(String title, int count, IconData icon, Color iconColor, double sw, double sh) {
+    final theme = Theme.of(context);
+    
     return AppCard(
-      padding: EdgeInsets.all(sw * 0.04),
+      padding: EdgeInsets.symmetric(horizontal: sw * 0.04, vertical: sh * 0.004),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Icon(icon, color: iconColor, size: sw * 0.05),
-              Text(
-                count.toString(),
-                style: TextStyle(fontSize: sw * 0.045, fontWeight: FontWeight.bold, color: kTextPrimary),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              count.toString(),
+              style: TextStyle(
+                fontSize: sw * 0.06,
+                fontWeight: FontWeight.bold,
+                color: theme.textTheme.titleLarge?.color,
               ),
-            ],
+            ),
           ),
-          SizedBox(height: sh * 0.008),
+          SizedBox(height: sh * 0.003),
           Text(
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: sw * 0.028, color: kTextSecondary, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontSize: sw * 0.032,
+              color: theme.textTheme.bodyMedium?.color,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
@@ -399,17 +478,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   // ── Section header ───────────────────────────────────────────────────────
   Widget _buildSectionHeader(String title, double hPad, Color accentColor, double sw, double sh) {
+    final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(hPad, 0, hPad, sh * 0.018),
-      child: Row(
-        children: [
-          Container(width: sw * 0.01, height: sh * 0.028, color: accentColor),
-          SizedBox(width: sw * 0.025),
-          Text(
-            title,
-            style: TextStyle(fontSize: sw * 0.04, fontWeight: FontWeight.bold, color: kTextPrimary),
-          ),
-        ],
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: sw * 0.038,
+          fontWeight: FontWeight.bold,
+          color: theme.textTheme.titleLarge?.color,
+        ),
       ),
     );
   }
@@ -417,7 +495,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ── Birthday row ─────────────────────────────────────────────────────────
   Widget _buildBirthdayRow(List<Map<String, dynamic>> items, double hPad, double sw, double sh) {
     return SizedBox(
-      height: sh * 0.15,
+      height: sh * 0.13,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.symmetric(horizontal: hPad),
@@ -425,17 +503,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         itemBuilder: (context, index) {
           final item = items[index];
           return Container(
-            width: sw * 0.32,
+            width: sw * 0.35,
             margin: EdgeInsets.only(right: sw * 0.03),
             child: AppCard(
-              borderRadius: sw * 0.04,
-              padding: EdgeInsets.all(sw * 0.03),
+              delay: (100 * index).ms,
+              padding: EdgeInsets.all(sw * 0.035),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   item['photoUrl'] != null
                       ? CircleAvatar(
-                          radius: sw * 0.05,
+                          radius: sw * 0.04,
                           backgroundImage: CachedNetworkImageProvider(
                             item['photoUrl'].startsWith('http')
                                 ? item['photoUrl']
@@ -443,29 +521,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                         )
                       : GradientAvatar(
-                          radius: sw * 0.05,
+                          radius: sw * 0.04,
                           initials: item['contactName']?[0] ?? item['name']?[0] ?? "U",
                         ),
                   SizedBox(height: sh * 0.008),
                   Text(
                     item['contactName'] ?? item['name'] ?? "Contact",
-                    style: TextStyle(color: kTextPrimary, fontWeight: FontWeight.w600, fontSize: sw * 0.032),
+                    maxLines: 1,
+                    style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontWeight: FontWeight.bold, fontSize: sw * 0.03),
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: sh * 0.003),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.cake, color: kBirthdayColor, size: sw * 0.028),
-                      SizedBox(width: sw * 0.008),
-                      Flexible(
-                        child: Text(
-                          item['type'] ?? "Today!",
-                          style: TextStyle(color: kBirthdayColor, fontSize: sw * 0.024),
-                          overflow: TextOverflow.ellipsis,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(color: kBirthdayColor.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.cake, color: kBirthdayColor, size: sw * 0.026),
+                        SizedBox(width: sw * 0.008),
+                        Text(
+                          "Today!",
+                          style: TextStyle(color: kBirthdayColor, fontSize: sw * 0.024, fontWeight: FontWeight.bold),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -476,7 +556,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildAnniversaryRow(List<Map<String, dynamic>> items, double hPad, double sw) {
+  Widget _buildAnniversaryRow(List<Map<String, dynamic>> items, double hPad, double sw, double sh) {
     if (items.isEmpty) {
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: hPad),
@@ -486,31 +566,67 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             SizedBox(width: sw * 0.015),
             Text(
               "No anniversaries today 🍰",
-              style: TextStyle(color: kTextTertiary, fontSize: sw * 0.032),
+              style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.032),
             ),
           ],
         ),
       );
     }
     return SizedBox(
-      height: 60,
+      height: sh * 0.13,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.symmetric(horizontal: hPad),
         itemCount: items.length,
         itemBuilder: (context, index) {
           final item = items[index];
-          return Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: Row(
-              children: [
-                Icon(Icons.favorite, color: kAnniversaryColor, size: sw * 0.04),
-                SizedBox(width: sw * 0.015),
-                Text(
-                  "${item['name']}'s Anniversary!",
-                  style: TextStyle(color: kTextPrimary, fontSize: sw * 0.032, fontWeight: FontWeight.bold),
-                ),
-              ],
+          return Container(
+            width: sw * 0.35,
+            margin: EdgeInsets.only(right: sw * 0.03),
+            child: AppCard(
+              delay: (100 * index).ms,
+              padding: EdgeInsets.all(sw * 0.035),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  item['photoUrl'] != null
+                      ? CircleAvatar(
+                          radius: sw * 0.04,
+                          backgroundImage: CachedNetworkImageProvider(
+                            item['photoUrl'].startsWith('http')
+                                ? item['photoUrl']
+                                : "${ApiConstants.baseImageUrl}${item['photoUrl']}",
+                          ),
+                        )
+                      : GradientAvatar(
+                          radius: sw * 0.04,
+                          initials: item['contactName']?[0] ?? item['name']?[0] ?? "U",
+                        ),
+                  SizedBox(height: sh * 0.008),
+                  Text(
+                    item['contactName'] ?? item['name'] ?? "Contact",
+                    maxLines: 1,
+                    style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontWeight: FontWeight.bold, fontSize: sw * 0.03),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: sh * 0.003),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(color: kAnniversaryColor.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.favorite, color: kAnniversaryColor, size: sw * 0.026),
+                        SizedBox(width: sw * 0.008),
+                        Text(
+                          "Today!",
+                          style: TextStyle(color: kAnniversaryColor, fontSize: sw * 0.024, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },
@@ -521,7 +637,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ── Custom Event row ─────────────────────────────────────────────────────
   Widget _buildCustomEventRow(List<Map<String, dynamic>> items, double hPad, double sw, double sh) {
     return SizedBox(
-      height: sh * 0.15,
+      height: sh * 0.13,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.symmetric(horizontal: hPad),
@@ -529,17 +645,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         itemBuilder: (context, index) {
           final item = items[index];
           return Container(
-            width: sw * 0.32,
+            width: sw * 0.35,
             margin: EdgeInsets.only(right: sw * 0.03),
             child: AppCard(
-              borderRadius: sw * 0.04,
-              padding: EdgeInsets.all(sw * 0.03),
+              delay: (100 * index).ms,
+              padding: EdgeInsets.all(sw * 0.035),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   item['photoUrl'] != null
                       ? CircleAvatar(
-                          radius: sw * 0.05,
+                          radius: sw * 0.04,
                           backgroundImage: CachedNetworkImageProvider(
                             item['photoUrl'].startsWith('http')
                                 ? item['photoUrl']
@@ -547,31 +663,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                         )
                       : GradientAvatar(
-                          radius: sw * 0.05,
+                          radius: sw * 0.04,
                           initials: item['contactName']?[0] ?? item['name']?[0] ?? "U",
                         ),
                   SizedBox(height: sh * 0.008),
                   Text(
                     item['contactName'] ?? item['name'] ?? "Contact",
-                    style: TextStyle(color: kTextPrimary, fontWeight: FontWeight.w600, fontSize: sw * 0.032),
+                    maxLines: 1,
+                    style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontWeight: FontWeight.bold, fontSize: sw * 0.03),
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: sh * 0.003),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.event, color: kCustomEventColor, size: sw * 0.028),
-                      SizedBox(width: sw * 0.008),
-                      Flexible(
-                        child: Text(
-                          item['label'] != null && item['label'].isNotEmpty
-                              ? item['label']
-                              : (item['type'] ?? "Event"),
-                          style: TextStyle(color: kCustomEventColor, fontSize: sw * 0.024),
-                          overflow: TextOverflow.ellipsis,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(color: kCustomEventColor.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.event, color: kCustomEventColor, size: sw * 0.026),
+                        SizedBox(width: sw * 0.008),
+                        Text(
+                          (item['type'] == 'Other' || item['type'] == 'Custom')
+                              ? (item['label'] != null && item['label'].toString().isNotEmpty ? item['label'] : "Special Day")
+                              : (item['label'] != null && item['label'].toString().isNotEmpty ? item['label'] : item['type']),
+                          style: TextStyle(color: kCustomEventColor, fontSize: sw * 0.024, fontWeight: FontWeight.bold),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -604,23 +722,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return Padding(
           padding: EdgeInsets.only(bottom: sh * 0.014),
           child: AppCard(
-            borderRadius: sw * 0.04,
             padding: EdgeInsets.all(sw * 0.035),
+            delay: (50 * index).ms,
             child: Row(
               children: [
                 Container(
-                  width: sw * 0.1,
-                  height: sw * 0.1,
+                  width: sw * 0.11,
+                  height: sw * 0.11,
                   decoration: BoxDecoration(
-                    color: (item['type'] == 'Birthday' ? kBirthdayColor : kAnniversaryColor).withOpacity(0.10),
+                    color: (item['type'] == 'Birthday' ? kBirthdayColor : kAnniversaryColor).withOpacity(0.12),
                     shape: BoxShape.circle
                   ),
                   child: item['photoUrl'] != null
-                      ? CircleAvatar(
-                          backgroundImage: CachedNetworkImageProvider(
-                            item['photoUrl'].startsWith('http')
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(100),
+                          child: CachedNetworkImage(
+                            imageUrl: item['photoUrl'].startsWith('http')
                                 ? item['photoUrl']
                                 : "${ApiConstants.baseImageUrl}${item['photoUrl']}",
+                            fit: BoxFit.cover,
                           ),
                         )
                       : Icon(
@@ -636,12 +756,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Text(
                         item['contactName'] ?? item['name'] ?? "Contact",
-                        style: TextStyle(color: kTextPrimary, fontWeight: FontWeight.bold, fontSize: sw * 0.038),
+                        style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontWeight: FontWeight.bold, fontSize: sw * 0.04),
                       ),
                       SizedBox(height: sh * 0.003),
                       Text(
-                        "${item['type']}${item['label'] != null && item['label'].isNotEmpty ? ' (${item['label']})' : ''} · $formattedDate",
-                        style: TextStyle(color: kTextSecondary, fontSize: sw * 0.029),
+                        "${(item['type'] == 'Other' || item['type'] == 'Custom') ? (item['label'] != null && item['label'].toString().isNotEmpty ? item['label'] : "Special Event") : "${item['type']}${item['label'] != null && item['label'].toString().isNotEmpty ? ' (${item['label']})' : ''}"} · $formattedDate",
+                        style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: sw * 0.029),
                       ),
                     ],
                   ),
@@ -649,15 +769,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: sw * 0.025, vertical: sh * 0.005),
                   decoration: BoxDecoration(
-                    color: (item['type'] == 'Birthday' ? kBirthdayColor : kAnniversaryColor).withOpacity(0.10),
-                    borderRadius: BorderRadius.circular(sw * 0.03),
+                    color: (item['type'] == 'Birthday' ? kBirthdayColor : kAnniversaryColor).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     DateHelper.countdownText(difference),
                     style: TextStyle(
                       color: item['type'] == 'Birthday' ? kBirthdayColor : kAnniversaryColor,
                       fontSize: sw * 0.027,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
@@ -671,14 +791,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   // ── FAB ──────────────────────────────────────────────────────────────────
   Widget _buildFAB(double sw) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return SizedBox(
       width: sw * 0.14,
       height: sw * 0.14,
       child: FloatingActionButton(
-        backgroundColor: kButtonColor,
+        heroTag: 'home_fab',
+        backgroundColor: theme.primaryColor,
         onPressed: () {Navigator.push(context, MaterialPageRoute(builder: (context)=>AddContactScreen()));},
         shape: const CircleBorder(),
-        child: Icon(Icons.add, color: Colors.white, size: sw * 0.07),
+        child: Icon(Icons.add, color: isDark ? Colors.black : Colors.white, size: sw * 0.07),
       ),
     );
   }
