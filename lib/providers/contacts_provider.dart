@@ -6,17 +6,19 @@ import '../models/contact_model.dart';
 final contactServiceProvider = Provider((ref) => ContactService());
 
 class ContactsState {
+  static const Object _noError = Object();
+
   final List<Contact> contacts;
   final bool isLoading;
   final String? error;
 
   ContactsState({this.contacts = const [], this.isLoading = false, this.error});
 
-  ContactsState copyWith({List<Contact>? contacts, bool? isLoading, String? error}) {
+  ContactsState copyWith({List<Contact>? contacts, bool? isLoading, Object? error = _noError}) {
     return ContactsState(
       contacts: contacts ?? this.contacts,
       isLoading: isLoading ?? this.isLoading,
-      error: error ?? this.error,
+      error: identical(error, _noError) ? this.error : error as String?,
     );
   }
 }

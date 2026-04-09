@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:path/path.dart' as p;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import '../core/constants/api_constants.dart';
@@ -7,6 +9,17 @@ import 'auth_service.dart';
 
 class ContactService {
   final AuthService _authService = AuthService();
+
+  static const int _maxImageBytes = 5 * 1024 * 1024;
+  static const Map<String, String> _allowedImageMimes = {
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'webp': 'image/webp',
+    'jfif': 'image/jpeg',
+    'heic': 'image/heic',
+    'heif': 'image/heif',
+  };
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await _authService.getToken();
@@ -21,7 +34,7 @@ class ContactService {
       if (search != null && search.isNotEmpty) 'search': search,
       if (filter != null && filter.isNotEmpty) 'filter': filter,
     };
-    
+
     final uri = Uri.parse(ApiConstants.contacts).replace(queryParameters: queryParams);
     final response = await http.get(uri, headers: await _getHeaders());
 
@@ -33,14 +46,52 @@ class ContactService {
     }
   }
 
+  Future<http.MultipartFile?> _buildImagePart(String? imagePath) async {
+    final path = imagePath?.trim();
+    if (path == null || path.isEmpty) return null;
+
+    final file = File(path);
+    if (!await file.exists()) {
+      throw Exception("Selected image file was not found.");
+    }
+
+    final fileSize = await file.length();
+    if (fileSize > _maxImageBytes) {
+      throw Exception("Image is too large. Please select an image under 5MB.");
+    }
+
+    final ext = p.extension(path).toLowerCase().replaceFirst('.', '');
+    final mimeType = _allowedImageMimes[ext] ?? 'image/jpeg';
+
+    return http.MultipartFile.fromPath(
+      'image',
+      path,
+      contentType: MediaType.parse(mimeType),
+    );
+  }
+
+  String _extractErrorMessage(http.Response response, {required String fallback}) {
+    try {
+      final data = jsonDecode(response.body);
+      if (data is Map<String, dynamic>) {
+        if (data['debug'] != null) {
+          print("BACKEND DEBUG: ${data['debug']}");
+        }
+        return data['message']?.toString() ?? fallback;
+      }
+    } catch (_) {
+      // Non-JSON error response from server/proxy
+    }
+    return "$fallback (HTTP ${response.statusCode})";
+  }
+
   Future<Contact> addContact(Map<String, dynamic> contactData, {String? imagePath}) async {
     final token = await _authService.getToken();
     final uri = Uri.parse(ApiConstants.contacts);
-    
+
     final request = http.MultipartRequest('POST', uri);
     request.headers['Authorization'] = 'Bearer $token';
 
-    // Add fields
     contactData.forEach((key, value) {
       if (value != null) {
         if (key == 'events') {
@@ -51,18 +102,9 @@ class ContactService {
       }
     });
 
-    // Add image
-    if (imagePath != null && imagePath.isNotEmpty) {
-      final ext = imagePath.toLowerCase().split('.').last;
-      String mimeType = "image/jpeg";
-      if (ext == "png") mimeType = "image/png";
-      else if (ext == "webp") mimeType = "image/webp";
-
-      request.files.add(await http.MultipartFile.fromPath(
-        'image',
-        imagePath,
-        contentType: MediaType.parse(mimeType),
-      ));
+    final imagePart = await _buildImagePart(imagePath);
+    if (imagePart != null) {
+      request.files.add(imagePart);
     }
 
     final streamedResponse = await request.send();
@@ -70,22 +112,20 @@ class ContactService {
 
     if (response.statusCode == 201) {
       return Contact.fromJson(jsonDecode(response.body));
-    } else {
-      final data = jsonDecode(response.body);
-      final errorMsg = data['message'] ?? "Failed to add contact";
-      if (data['debug'] != null) print("❌ BACKEND DEBUG: ${data['debug']}");
-      throw Exception(errorMsg);
     }
+
+    throw Exception(
+      _extractErrorMessage(response, fallback: "Failed to add contact"),
+    );
   }
 
   Future<Contact> updateContact(String id, Map<String, dynamic> contactData, {String? imagePath}) async {
     final token = await _authService.getToken();
     final uri = Uri.parse("${ApiConstants.contacts}/$id");
-    
+
     final request = http.MultipartRequest('PUT', uri);
     request.headers['Authorization'] = 'Bearer $token';
 
-    // Add fields
     contactData.forEach((key, value) {
       if (value != null) {
         if (key == 'events') {
@@ -96,18 +136,9 @@ class ContactService {
       }
     });
 
-    // Add image
-    if (imagePath != null && imagePath.isNotEmpty) {
-      final ext = imagePath.toLowerCase().split('.').last;
-      String mimeType = "image/jpeg";
-      if (ext == "png") mimeType = "image/png";
-      else if (ext == "webp") mimeType = "image/webp";
-
-      request.files.add(await http.MultipartFile.fromPath(
-        'image',
-        imagePath,
-        contentType: MediaType.parse(mimeType),
-      ));
+    final imagePart = await _buildImagePart(imagePath);
+    if (imagePart != null) {
+      request.files.add(imagePart);
     }
 
     final streamedResponse = await request.send();
@@ -115,12 +146,11 @@ class ContactService {
 
     if (response.statusCode == 200) {
       return Contact.fromJson(jsonDecode(response.body));
-    } else {
-      final data = jsonDecode(response.body);
-      final errorMsg = data['message'] ?? "Failed to update contact";
-      if (data['debug'] != null) print("❌ BACKEND DEBUG: ${data['debug']}");
-      throw Exception(errorMsg);
     }
+
+    throw Exception(
+      _extractErrorMessage(response, fallback: "Failed to update contact"),
+    );
   }
 
   Future<void> deleteContact(String id) async {

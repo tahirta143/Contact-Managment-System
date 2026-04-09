@@ -10,4 +10,27 @@ class ApiConstants {
   static const String contacts = "$baseUrl/contacts";
   static const String reminders = "$baseUrl/reminders";
   static const String eventsUpcoming = "$baseUrl/events/upcoming";
+
+  static String? resolveImageUrl(String? photoUrl) {
+    if (photoUrl == null) return null;
+
+    var cleaned = photoUrl.trim();
+    if (cleaned.isEmpty || cleaned.toLowerCase() == "null") {
+      return null;
+    }
+
+    // Normalize legacy/backslash paths from some environments.
+    cleaned = cleaned.replaceAll('\\', '/');
+    cleaned = cleaned.replaceAll(RegExp(r'^\.\/+'), '');
+
+    if (cleaned.startsWith("http://") || cleaned.startsWith("https://")) {
+      return Uri.encodeFull(cleaned);
+    }
+
+    if (cleaned.startsWith("/")) {
+      return Uri.encodeFull("$baseImageUrl$cleaned");
+    }
+
+    return Uri.encodeFull("$baseImageUrl/$cleaned");
+  }
 }

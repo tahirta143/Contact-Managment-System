@@ -77,7 +77,12 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
                 onTap: () async {
                   Navigator.pop(context);
                   final picker = ImagePicker();
-                  final pickedFile = await picker.pickImage(source: ImageSource.camera);
+                  final pickedFile = await picker.pickImage(
+                    source: ImageSource.camera,
+                    imageQuality: 85,
+                    maxWidth: 1600,
+                    maxHeight: 1600,
+                  );
                   if (pickedFile != null) setState(() => _imagePath = pickedFile.path);
                 },
               ),
@@ -87,7 +92,12 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
                 onTap: () async {
                   Navigator.pop(context);
                   final picker = ImagePicker();
-                  final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+                  final pickedFile = await picker.pickImage(
+                    source: ImageSource.gallery,
+                    imageQuality: 85,
+                    maxWidth: 1600,
+                    maxHeight: 1600,
+                  );
                   if (pickedFile != null) setState(() => _imagePath = pickedFile.path);
                 },
               ),

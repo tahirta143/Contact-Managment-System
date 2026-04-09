@@ -367,19 +367,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
             horizontal: sw * 0.045,
             vertical: sw * 0.008,
           ),
-          leading: contact.photoUrl != null
-              ? CircleAvatar(
-                  radius: avatarRadius,
-                  backgroundImage: CachedNetworkImageProvider(
-                    contact.photoUrl!.startsWith('http')
-                        ? contact.photoUrl!
-                        : "${ApiConstants.baseImageUrl}${contact.photoUrl}",
-                  ),
-                )
-              : GradientAvatar(
-                  radius: avatarRadius,
-                  initials: contact.name.isNotEmpty ? contact.name[0].toUpperCase() : "?",
-                ),
+          leading: _buildContactAvatar(contact, avatarRadius),
           title: Text(
             contact.name,
             style: TextStyle(
@@ -439,6 +427,29 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
             ],
           )
               : Icon(Icons.chevron_right, color: Theme.of(context).textTheme.labelSmall?.color, size: iconSize * 1.2),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContactAvatar(Contact contact, double avatarRadius) {
+    final photoUrl = ApiConstants.resolveImageUrl(contact.photoUrl);
+    if (photoUrl == null) {
+      return GradientAvatar(
+        radius: avatarRadius,
+        initials: contact.name.isNotEmpty ? contact.name[0].toUpperCase() : "?",
+      );
+    }
+
+    return ClipOval(
+      child: Image.network(
+        photoUrl,
+        width: avatarRadius * 2,
+        height: avatarRadius * 2,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => GradientAvatar(
+          radius: avatarRadius,
+          initials: contact.name.isNotEmpty ? contact.name[0].toUpperCase() : "?",
         ),
       ),
     );
@@ -555,6 +566,38 @@ class _GroupContactsScreenState extends ConsumerState<GroupContactsScreen> {
     );
   }
 
+  Widget _buildContactAvatar(Contact contact, double avatarRadius) {
+    final photoUrl = ApiConstants.resolveImageUrl(contact.photoUrl);
+    if (photoUrl == null) {
+      return GradientAvatar(
+        radius: avatarRadius,
+        initials: contact.name.isNotEmpty ? contact.name[0].toUpperCase() : "?",
+      );
+    }
+
+    return CachedNetworkImage(
+      imageUrl: photoUrl,
+      imageBuilder: (context, imageProvider) => CircleAvatar(
+        radius: avatarRadius,
+        backgroundColor: Theme.of(context).cardTheme.color,
+        backgroundImage: imageProvider,
+      ),
+      placeholder: (context, url) => CircleAvatar(
+        radius: avatarRadius,
+        backgroundColor: Theme.of(context).cardTheme.color,
+        child: SizedBox(
+          width: avatarRadius * 0.9,
+          height: avatarRadius * 0.9,
+          child: const CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+      errorWidget: (context, url, error) => GradientAvatar(
+        radius: avatarRadius,
+        initials: contact.name.isNotEmpty ? contact.name[0].toUpperCase() : "?",
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final sw = MediaQuery.of(context).size.width;
@@ -597,20 +640,7 @@ class _GroupContactsScreenState extends ConsumerState<GroupContactsScreen> {
                         ),
                       ),
                       contentPadding: EdgeInsets.symmetric(horizontal: sw * 0.04, vertical: sw * 0.008),
-                      leading: contact.photoUrl != null
-                          ? CircleAvatar(
-                              radius: avatarRadius,
-                              backgroundColor: Theme.of(context).cardTheme.color,
-                              backgroundImage: CachedNetworkImageProvider(
-                                contact.photoUrl!.startsWith('http')
-                                    ? contact.photoUrl!
-                                    : "${ApiConstants.baseImageUrl}${contact.photoUrl}",
-                              ),
-                            )
-                          : GradientAvatar(
-                              radius: avatarRadius,
-                              initials: contact.name.isNotEmpty ? contact.name[0].toUpperCase() : "?",
-                            ),
+                      leading: _buildContactAvatar(contact, avatarRadius),
                       title: Text(
                         contact.name,
                         style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color, fontWeight: FontWeight.w600, fontSize: titleFontSize),
@@ -672,4 +702,3 @@ class _GroupContactsScreenState extends ConsumerState<GroupContactsScreen> {
     );
   }
 }
-

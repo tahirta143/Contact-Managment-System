@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/utils/common_widgets.dart';
@@ -130,7 +129,12 @@ class _EditContactScreenState extends ConsumerState<EditContactScreen> {
                 onTap: () async {
                   Navigator.pop(context);
                   final picker = ImagePicker();
-                  final pickedFile = await picker.pickImage(source: ImageSource.camera);
+                  final pickedFile = await picker.pickImage(
+                    source: ImageSource.camera,
+                    imageQuality: 85,
+                    maxWidth: 1600,
+                    maxHeight: 1600,
+                  );
                   if (pickedFile != null) setState(() => _imagePath = pickedFile.path);
                 },
               ),
@@ -140,7 +144,12 @@ class _EditContactScreenState extends ConsumerState<EditContactScreen> {
                 onTap: () async {
                   Navigator.pop(context);
                   final picker = ImagePicker();
-                  final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+                  final pickedFile = await picker.pickImage(
+                    source: ImageSource.gallery,
+                    imageQuality: 85,
+                    maxWidth: 1600,
+                    maxHeight: 1600,
+                  );
                   if (pickedFile != null) setState(() => _imagePath = pickedFile.path);
                 },
               ),
@@ -321,11 +330,11 @@ class _EditContactScreenState extends ConsumerState<EditContactScreen> {
     ImageProvider? imageProvider;
     if (_imagePath != null) {
       imageProvider = FileImage(File(_imagePath!));
-    } else if (_currentPhotoUrl != null) {
-      final url = _currentPhotoUrl!.startsWith('http')
-          ? _currentPhotoUrl!
-          : "${ApiConstants.baseImageUrl}${_currentPhotoUrl}";
-      imageProvider = CachedNetworkImageProvider(url);
+    } else {
+      final url = ApiConstants.resolveImageUrl(_currentPhotoUrl);
+      if (url != null) {
+        imageProvider = NetworkImage(url);
+      }
     }
 
     return Center(

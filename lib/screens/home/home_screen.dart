@@ -38,6 +38,11 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   DateTime _selectedHomeDate = DateTime.now();
 
+  String? _resolvedImageUrl(dynamic rawUrl) {
+    if (rawUrl == null) return null;
+    return ApiConstants.resolveImageUrl(rawUrl.toString());
+  }
+
   @override
   void initState() {
     super.initState();
@@ -278,6 +283,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   // ── AppBar ───────────────────────────────────────────────────────────────
   PreferredSizeWidget _buildAppBar(double sw) {
+    final user = ref.watch(authProvider).user;
+    final userPhotoUrl = _resolvedImageUrl(user?.photoUrl);
     return AppBar(
       leading: IconButton(
         icon: Icon(Icons.menu, size: sw * 0.06),
@@ -306,14 +313,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
             ),
-            child: ref.watch(authProvider).user?.photoUrl != null
+            child: userPhotoUrl != null
                 ? CircleAvatar(
                     radius: sw * 0.045,
-                    backgroundImage: CachedNetworkImageProvider(
-                      ref.watch(authProvider).user!.photoUrl!.startsWith('http')
-                          ? ref.watch(authProvider).user!.photoUrl!
-                          : "${ApiConstants.baseImageUrl}${ref.watch(authProvider).user!.photoUrl}",
-                    ),
+                    backgroundImage: CachedNetworkImageProvider(userPhotoUrl),
                   )
                 : GradientAvatar(
                     radius: sw * 0.045,
@@ -332,6 +335,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ── Greeting card ────────────────────────────────────────────────────────
   Widget _buildGreetingCard(String name, double hPad, double sw, double sh) {
     final user = ref.watch(authProvider).user;
+    final userPhotoUrl = _resolvedImageUrl(user?.photoUrl);
     final theme = Theme.of(context);
     final accent = theme.primaryColor;
     final textPri = theme.textTheme.titleLarge?.color;
@@ -391,19 +395,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(color: accent.withOpacity(0.2), width: 1.5),
-                image: user?.photoUrl != null
+                image: userPhotoUrl != null
                     ? DecorationImage(
-                        image: CachedNetworkImageProvider(
-                          user!.photoUrl!.startsWith('http')
-                              ? user!.photoUrl!
-                              : "${ApiConstants.baseImageUrl}${user.photoUrl}",
-                        ),
+                        image: CachedNetworkImageProvider(userPhotoUrl),
                         fit: BoxFit.cover,
                       )
                     : null,
                 color: theme.colorScheme.surfaceContainerHighest,
               ),
-              child: user?.photoUrl == null
+              child: userPhotoUrl == null
                   ? Icon(Icons.person, size: sw * 0.08, color: accent)
                   : null,
             ),
@@ -492,6 +492,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  Widget _buildEventAvatar({
+    required String? imageUrl,
+    required String initials,
+    required double radius,
+  }) {
+    if (imageUrl == null) {
+      return GradientAvatar(radius: radius, initials: initials);
+    }
+
+    return ClipOval(
+      child: Image.network(
+        imageUrl,
+        width: radius * 2,
+        height: radius * 2,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) =>
+            GradientAvatar(radius: radius, initials: initials),
+      ),
+    );
+  }
+
   // ── Birthday row ─────────────────────────────────────────────────────────
   Widget _buildBirthdayRow(List<Map<String, dynamic>> items, double hPad, double sw, double sh) {
     return SizedBox(
@@ -502,6 +523,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         itemCount: items.length,
         itemBuilder: (context, index) {
           final item = items[index];
+          final itemPhotoUrl = _resolvedImageUrl(item['photoUrl']);
           return Container(
             width: sw * 0.35,
             margin: EdgeInsets.only(right: sw * 0.03),
@@ -511,19 +533,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  item['photoUrl'] != null
-                      ? CircleAvatar(
-                          radius: sw * 0.04,
-                          backgroundImage: CachedNetworkImageProvider(
-                            item['photoUrl'].startsWith('http')
-                                ? item['photoUrl']
-                                : "${ApiConstants.baseImageUrl}${item['photoUrl']}",
-                          ),
-                        )
-                      : GradientAvatar(
-                          radius: sw * 0.04,
-                          initials: item['contactName']?[0] ?? item['name']?[0] ?? "U",
-                        ),
+                  _buildEventAvatar(
+                    imageUrl: itemPhotoUrl,
+                    initials: item['contactName']?[0] ?? item['name']?[0] ?? "U",
+                    radius: sw * 0.04,
+                  ),
                   SizedBox(height: sh * 0.008),
                   Text(
                     item['contactName'] ?? item['name'] ?? "Contact",
@@ -580,6 +594,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         itemCount: items.length,
         itemBuilder: (context, index) {
           final item = items[index];
+          final itemPhotoUrl = _resolvedImageUrl(item['photoUrl']);
           return Container(
             width: sw * 0.35,
             margin: EdgeInsets.only(right: sw * 0.03),
@@ -589,19 +604,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  item['photoUrl'] != null
-                      ? CircleAvatar(
-                          radius: sw * 0.04,
-                          backgroundImage: CachedNetworkImageProvider(
-                            item['photoUrl'].startsWith('http')
-                                ? item['photoUrl']
-                                : "${ApiConstants.baseImageUrl}${item['photoUrl']}",
-                          ),
-                        )
-                      : GradientAvatar(
-                          radius: sw * 0.04,
-                          initials: item['contactName']?[0] ?? item['name']?[0] ?? "U",
-                        ),
+                  _buildEventAvatar(
+                    imageUrl: itemPhotoUrl,
+                    initials: item['contactName']?[0] ?? item['name']?[0] ?? "U",
+                    radius: sw * 0.04,
+                  ),
                   SizedBox(height: sh * 0.008),
                   Text(
                     item['contactName'] ?? item['name'] ?? "Contact",
@@ -644,6 +651,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         itemCount: items.length,
         itemBuilder: (context, index) {
           final item = items[index];
+          final itemPhotoUrl = _resolvedImageUrl(item['photoUrl']);
           return Container(
             width: sw * 0.35,
             margin: EdgeInsets.only(right: sw * 0.03),
@@ -653,19 +661,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  item['photoUrl'] != null
-                      ? CircleAvatar(
-                          radius: sw * 0.04,
-                          backgroundImage: CachedNetworkImageProvider(
-                            item['photoUrl'].startsWith('http')
-                                ? item['photoUrl']
-                                : "${ApiConstants.baseImageUrl}${item['photoUrl']}",
-                          ),
-                        )
-                      : GradientAvatar(
-                          radius: sw * 0.04,
-                          initials: item['contactName']?[0] ?? item['name']?[0] ?? "U",
-                        ),
+                  _buildEventAvatar(
+                    imageUrl: itemPhotoUrl,
+                    initials: item['contactName']?[0] ?? item['name']?[0] ?? "U",
+                    radius: sw * 0.04,
+                  ),
                   SizedBox(height: sh * 0.008),
                   Text(
                     item['contactName'] ?? item['name'] ?? "Contact",
@@ -715,6 +715,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
+        final itemPhotoUrl = _resolvedImageUrl(item['photoUrl']);
         final eventDate = item['date'] != null ? DateTime.parse(item['date']) : null;
         final int difference = item['daysUntil'] ?? 0;
         final formattedDate = eventDate != null ? DateFormat('d MMMM').format(eventDate) : "";
@@ -733,14 +734,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     color: (item['type'] == 'Birthday' ? kBirthdayColor : kAnniversaryColor).withOpacity(0.12),
                     shape: BoxShape.circle
                   ),
-                  child: item['photoUrl'] != null
+                  child: itemPhotoUrl != null
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(100),
-                          child: CachedNetworkImage(
-                            imageUrl: item['photoUrl'].startsWith('http')
-                                ? item['photoUrl']
-                                : "${ApiConstants.baseImageUrl}${item['photoUrl']}",
+                          child: Image.network(
+                            itemPhotoUrl,
                             fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                              item['type'] == 'Birthday' ? Icons.cake : Icons.favorite,
+                              color: item['type'] == 'Birthday' ? kBirthdayColor : kAnniversaryColor,
+                              size: sw * 0.05,
+                            ),
                           ),
                         )
                       : Icon(

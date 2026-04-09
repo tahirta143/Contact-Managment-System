@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/utils/common_widgets.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/contact_model.dart';
 import '../../providers/contacts_provider.dart';
 import 'edit_contact_screen.dart';
@@ -17,6 +16,29 @@ const Color kAnniversaryColor = Color(0xFFFF9500);
 class ContactDetailScreen extends ConsumerWidget {
   final String contactId;
   const ContactDetailScreen({super.key, required this.contactId});
+
+  Widget _buildContactAvatar(BuildContext context, Contact contact, double avatarRadius) {
+    final photoUrl = ApiConstants.resolveImageUrl(contact.photoUrl);
+    if (photoUrl == null) {
+      return GradientAvatar(
+        radius: avatarRadius,
+        initials: contact.name.isNotEmpty ? contact.name[0].toUpperCase() : "?",
+      );
+    }
+
+    return ClipOval(
+      child: Image.network(
+        photoUrl,
+        width: avatarRadius * 2,
+        height: avatarRadius * 2,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => GradientAvatar(
+          radius: avatarRadius,
+          initials: contact.name.isNotEmpty ? contact.name[0].toUpperCase() : "?",
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -168,19 +190,7 @@ class ContactDetailScreen extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SizedBox(height: MediaQuery.of(context).padding.top + sh * 0.02),
-            contact.photoUrl != null
-                ? CircleAvatar(
-                    radius: avatarRadius,
-                    backgroundImage: CachedNetworkImageProvider(
-                      contact.photoUrl!.startsWith('http')
-                          ? contact.photoUrl!
-                          : "${ApiConstants.baseImageUrl}${contact.photoUrl}",
-                    ),
-                  )
-                : GradientAvatar(
-                    radius: avatarRadius,
-                    initials: contact.name.isNotEmpty ? contact.name[0].toUpperCase() : "?",
-                  ),
+            _buildContactAvatar(context, contact, avatarRadius),
             SizedBox(height: sh * 0.018),
             Text(
               contact.name,
