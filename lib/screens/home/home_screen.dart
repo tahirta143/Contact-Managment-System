@@ -72,6 +72,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final upcomingEvents = ref.watch(upcomingEventsProvider(10));
     final remindersState = ref.watch(remindersProvider);
 
+    // Listen for navigation changes: Reset to today when the Home tab is re-selected
+    ref.listen(mainSelectedIndexProvider, (previous, next) {
+      if (next == 0 && _selectedHomeDate.day != DateTime.now().day) {
+        setState(() {
+          _selectedHomeDate = DateTime.now();
+        });
+      }
+    });
+
     // Filter events based on _selectedHomeDate
     final selMonth = _selectedHomeDate.month;
     final selDay   = _selectedHomeDate.day;
@@ -698,11 +707,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       children: [
                         Icon(Icons.event, color: kCustomEventColor, size: sw * 0.026),
                         SizedBox(width: sw * 0.008),
-                        Text(
-                          (item['type'] == 'Other' || item['type'] == 'Custom')
-                              ? (item['label'] != null && item['label'].toString().isNotEmpty ? item['label'] : "Special Day")
-                              : (item['label'] != null && item['label'].toString().isNotEmpty ? item['label'] : item['type']),
-                          style: TextStyle(color: kCustomEventColor, fontSize: sw * 0.024, fontWeight: FontWeight.bold),
+                        Flexible(
+                          child: Text(
+                            (item['type'] == 'Other' || item['type'] == 'Custom')
+                                ? (item['label'] != null && item['label'].toString().isNotEmpty ? item['label'] : "Special Day")
+                                : (item['label'] != null && item['label'].toString().isNotEmpty ? item['label'] : item['type']),
+                            style: TextStyle(color: kCustomEventColor, fontSize: sw * 0.024, fontWeight: FontWeight.bold),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),

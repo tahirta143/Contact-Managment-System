@@ -10,6 +10,7 @@ class ApiConstants {
   static const String contacts = "$baseUrl/contacts";
   static const String reminders = "$baseUrl/reminders";
   static const String eventsUpcoming = "$baseUrl/events/upcoming";
+  static const String appConfig = "$baseUrl/app-config";
 
   static String? resolveImageUrl(String? photoUrl) {
     if (photoUrl == null) return null;

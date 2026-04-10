@@ -5,6 +5,8 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../main_screen.dart';
 import 'login_screen.dart';
+import 'force_update_screen.dart';
+import '../../services/version_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
 
@@ -91,6 +93,20 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     }
 
     if (!mounted) return;
+    
+    // ── Version Check ────────────────────────────────────────────────────────
+    final bool updateRequired = await VersionService.isUpdateRequired();
+    if (!mounted) return;
+
+    if (updateRequired) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const ForceUpdateScreen()),
+      );
+      return;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     final finalUser = ref.read(authProvider).user;
 
     Navigator.pushReplacement(

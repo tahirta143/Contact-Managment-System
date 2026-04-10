@@ -57,17 +57,18 @@ class FcmService {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       print("Got a message whilst in the foreground!");
       if (message.notification != null) {
-        _showLocalNotification(message.notification!);
+        _showLocalNotification(message); // Pass the whole message
       }
     });
   }
 
-  static Future<void> _showLocalNotification(RemoteNotification notification) async {
-    // FIX: Reverting channelId and channelName to positional arguments as required by AndroidNotificationDetails constructor
-    var androidPlatformChannelSpecifics =
-        const AndroidNotificationDetails(
-      'contact_events', // channelId as positional
-      'Contact Events', // channelName as positional
+  static Future<void> _showLocalNotification(RemoteMessage message) async {
+    final notification = message.notification;
+    if (notification == null) return;
+
+    var androidPlatformChannelSpecifics = const AndroidNotificationDetails(
+      'contact_events',
+      'Contact Events',
       channelDescription: 'Notifications for birthdays and anniversaries',
       importance: Importance.max,
       priority: Priority.high,
@@ -80,12 +81,12 @@ class FcmService {
       macOS: const DarwinNotificationDetails(),
     );
 
-    // Using strictly named parameters for .show() as required by v21.0.0+
     await _localNotificationsPlugin.show(
       id: notification.hashCode,
       title: notification.title,
       body: notification.body,
       notificationDetails: platformChannelSpecifics,
+      payload: message.data.toString(), // Store the new data here
     );
   }
 }
