@@ -1,9 +1,9 @@
 class AppStrings {
-  static const String appName = "ContactBook";
+  static const String appName = "ContactBook (Patched!)";
   static const String tagline = "Stay connected, never forget";
   
   // Auth
-  static const String welcomeBack = "Welcome Back";
+  static const String welcomeBack = "Welcome Back to your app ";
   static const String signInSubtitle = "Sign in to your account";
   static const String forgotPassword = "Forgot password?";
   static const String login = "Log In";
